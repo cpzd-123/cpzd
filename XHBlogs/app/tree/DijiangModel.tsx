@@ -7,12 +7,11 @@ import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, useGLTF, Html } from '@react-three/drei';
+import { Float, Html } from '@react-three/drei';
 
 import LabComments from '../../components/LabComments';
 import { siteConfig } from '../../siteConfig';
 
-// 🌟 引入相册与友链数据 (请确保路径正确)
 import { albums } from '../../data/albums';
 import { friendsData } from '../../data/friends';
 
@@ -234,42 +233,65 @@ const TacticalPoint = ({ position, color, isActive, records, categoryName, isIma
 };
 
 // ==========================================
-// 🌟 5. 解析模型并注入发光粒子特效
+// 🌟 5. 解析二进制点云并注入发光粒子特效
 // ==========================================
 const DijiangParticleModel = () => {
-  const { scene } = useGLTF('/dijiang-compressed.glb');
-  const { edgeParticles, surfaceParticles } = useMemo(() => {
-    scene.updateMatrixWorld(true);
-    const edgePoints: number[] = [];
-    const surfacePoints: number[] = [];
-    scene.traverse((object) => {
-      if (object instanceof THREE.Mesh) {
-        const geometry = object.geometry.clone();
-        geometry.applyMatrix4(object.matrixWorld);
-        const posAttr = geometry.attributes.position;
-        if (posAttr) {
-          for (let i = 0; i < posAttr.array.length; i += 9) surfacePoints.push(posAttr.array[i], posAttr.array[i+1], posAttr.array[i+2]);
+  const [pointGeometry, setPointGeometry] = useState<THREE.BufferGeometry | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // 如果你改了 bin 文件的名字，请在这里修改请求路径，例如： fetch('/12345.bin')
+    fetch('/spaceship.bin')
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch spaceship.bin");
+        return res.arrayBuffer();
+      })
+      .then(buffer => {
+        if (!isMounted) return;
+
+        const raw = new Float32Array(buffer);
+        const count = raw.length / 3;
+
+        let mx = 0, my = 0, mz = 0;
+        for(let i = 0; i < raw.length; i += 3) {
+          mx += raw[i];
+          my += raw[i+1];
+          mz += raw[i+2];
         }
-        const edges = new THREE.EdgesGeometry(geometry, 15);
-        if (edges.attributes.position) {
-          const arr = edges.attributes.position.array;
-          for (let i = 0; i < arr.length; i += 6) {
-            const dist = Math.sqrt((arr[i+3]-arr[i])**2 + (arr[i+4]-arr[i+1])**2 + (arr[i+5]-arr[i+2])**2);
-            const count = Math.max(2, Math.min(40, Math.floor(dist * 8)));
-            for (let j = 0; j < count; j++) edgePoints.push(arr[i] + (arr[i+3] - arr[i]) * (j/count), arr[i+1] + (arr[i+4] - arr[i+1]) * (j/count), arr[i+2] + (arr[i+5] - arr[i+2]) * (j/count));
-          }
+        mx /= count; my /= count; mz /= count;
+
+        let maxD = 0;
+        for(let i = 0; i < raw.length; i += 3) {
+          raw[i] -= mx;
+          raw[i+1] -= my;
+          raw[i+2] -= mz;
+          const d = Math.sqrt(raw[i]**2 + raw[i+1]**2 + raw[i+2]**2);
+          if(d > maxD) maxD = d;
         }
-      }
-    });
-    const eGeo = new THREE.BufferGeometry(); if (edgePoints.length > 0) eGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePoints, 3));
-    const sGeo = new THREE.BufferGeometry(); if (surfacePoints.length > 0) sGeo.setAttribute('position', new THREE.Float32BufferAttribute(surfacePoints, 3));
-    return { edgeParticles: eGeo, surfaceParticles: sGeo };
-  }, [scene]);
+
+        const sc = 5 / maxD;
+        for(let i = 0; i < raw.length; i++) {
+          raw[i] *= sc;
+        }
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(raw, 3));
+        setPointGeometry(geo);
+      })
+      .catch(err => {
+        console.error("Error loading point cloud model:", err);
+      });
+
+    return () => { isMounted = false; };
+  }, []);
+
+  if (!pointGeometry) return null;
 
   return (
     <group>
-      <BlinkingPoints geometry={edgeParticles} color="#eab308" size={0.02} opacity={0.6} />
-      <BlinkingPoints geometry={surfaceParticles} color="#0284c7" size={0.015} opacity={0.2} />
+      {/* 🌟 颜色已经改回了黄色：#eab308 */}
+      <BlinkingPoints geometry={pointGeometry} color="#eab308" size={0.035} opacity={0.7} />
     </group>
   );
 };
@@ -277,16 +299,21 @@ const DijiangParticleModel = () => {
 const HologramShip = ({ activeCategory, currentRecords, router }: any) => {
   return (
     <Float speed={2} rotationIntensity={0.05} floatIntensity={0.5}>
-      <group scale={0.28} position={[2.9, 1.5, 0]}>
-        <group rotation={[Math.PI / 2, 0, 4]}>
+      {/* 👇 调整这里的 scale 和 position 来控制整体大小和位置 👇 */}
+      <group scale={1} position={[1.2, 0.8, 1]}>
+
+        {/* 👇 调整这里的 rotation 控制模型的旋转角度 (X, Y, Z轴，弧度制) 👇 */}
+        <group rotation={[Math.PI / 0.9, -0.2, 3.0]}>
+
           <DijiangParticleModel />
-          <TacticalPoint position={[0, 1.5, 1.5]} color="#0ea5e9" categoryName="PRTS_DB"
+
+          <TacticalPoint position={[-1.0, -0.5, 1.5]} color="#0ea5e9" categoryName="PRTS_DB"
                          isActive={activeCategory === 'post'} records={currentRecords.filter((r:any) => r.type === 'post')} isImageStyle={true} router={router} />
           <TacticalPoint position={[-1.5, -2, 1.5]} color="#eab308" categoryName="LOGS"
                          isActive={activeCategory === 'chatter'} records={currentRecords.filter((r:any) => r.type === 'chatter')} isImageStyle={true} router={router} />
-          <TacticalPoint position={[1.5, 0, 1.5]} color="#10b981" categoryName="BEACON"
+          <TacticalPoint position={[-2.3, 0, 1.5]} color="#10b981" categoryName="BEACON"
                          isActive={activeCategory === 'moment'} records={currentRecords.filter((r:any) => r.type === 'moment')} isImageStyle={false} router={router} />
-          <TacticalPoint position={[0, 4, 0]} color="#f1f5f9" categoryName="RECEPTION"
+          <TacticalPoint position={[-2.3, -0.5, 1.5]} color="#f1f5f9" categoryName="RECEPTION"
                          isActive={activeCategory === 'message'} records={currentRecords.filter((r:any) => r.type === 'message')} isImageStyle={false} router={router} />
         </group>
       </group>
@@ -634,7 +661,6 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
       <AnimatePresence>
         {showCatalog && rpgStats && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            {/* 🌟 修改点：这里的背景遮罩调整为半透明黑 bg-black/40，这样就能看到后方的全息战舰 */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowCatalog(false)} />
 
             <motion.div

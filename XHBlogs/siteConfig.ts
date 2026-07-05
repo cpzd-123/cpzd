@@ -36,12 +36,6 @@ export const siteConfig = {
 
   // 5. 首页照片墙预览图
   photoWallImage: cpzdPlaceholderImage,
-  cloudMusicIds: [],
-  neteasePlaylist: {
-    id: "18100097519",
-    name: "一辈子乐队歌",
-    url: "https://music.163.com/m/playlist?id=18100097519&creatorId=3296598407",
-  },
   social: {
     github: "https://github.com/cpzd-123",
     gitee: "",

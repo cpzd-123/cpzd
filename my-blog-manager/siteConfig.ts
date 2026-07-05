@@ -2,7 +2,7 @@
 
 export const siteConfig = {
   // 1. 网站标题与博主信息
-  title: "CPZD Admin",
+  title: "CPZD 后台",
   faviconUrl: "/assets/images/avatar.png",
   authorName: "CPZD",
   bio: "记录开发、学习、生活与分享。",
@@ -12,7 +12,7 @@ export const siteConfig = {
   // 👇 【新增】导航栏中间的那个后缀/分隔符（默认是 の）
   navSuffix: "の",
 
-  navAfter: "Admin",
+  navAfter: "后台",
 
   // 2. 头像设置 (支持网络链接，或将图片放入 public 文件夹后使用 "/me.jpg")
   avatarUrl: "/assets/images/avatar.png",
@@ -50,7 +50,7 @@ export const siteConfig = {
   picBedToken: "", // 留空，等你能在后台填入并覆写
 
   // 👇 【新增】：全局背景弹幕配置
-  danmakuList: ["CPZD Admin", "Record", "Create", "Share", "Next.js", "Open Source"],
+  danmakuList: ["CPZD 后台", "记录", "创作", "分享", "Next.js", "开源"],
   gitalkConfig: {
     clientID: "",
     clientSecret: "",

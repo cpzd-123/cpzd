@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 
 // 【引入你的独立工具模块】
 import CalculatorTool from './toolbox/CalculatorTool';
@@ -15,8 +16,11 @@ const TOOL_REGISTRY = [
 ];
 
 export default function GlobalToolbox() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [activeToolId, setActiveToolId] = useState<string | null>(null);
+
+  if (pathname?.startsWith('/admin')) return null;
 
   // 获取当前激活的工具对象
   const activeTool = TOOL_REGISTRY.find(t => t.id === activeToolId);

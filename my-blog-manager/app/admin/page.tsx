@@ -28,16 +28,16 @@ type AssetItem = {
 };
 
 const menuItems = [
-  { id: "dashboard", name: "Dashboard" },
-  { id: "config", name: "Site Config" },
-  { id: "posts", name: "Posts" },
-  { id: "moments", name: "Moments" },
-  { id: "projects", name: "Projects" },
-  { id: "gallery", name: "Gallery" },
-  { id: "friends", name: "Friends" },
-  { id: "assets", name: "Assets" },
-  { id: "plugins", name: "Plugins" },
-  { id: "deploy", name: "Deploy" },
+  { id: "dashboard", name: "仪表盘" },
+  { id: "config", name: "站点配置" },
+  { id: "posts", name: "文章管理" },
+  { id: "moments", name: "动态管理" },
+  { id: "projects", name: "项目管理" },
+  { id: "gallery", name: "相册管理" },
+  { id: "friends", name: "友链管理" },
+  { id: "assets", name: "资源管理" },
+  { id: "plugins", name: "插件管理" },
+  { id: "deploy", name: "发布部署" },
 ];
 
 const defaultPostForm = {
@@ -65,11 +65,11 @@ export default function AdminDashboard() {
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [assets, setAssets] = useState<AssetItem[]>([]);
   const [postForm, setPostForm] = useState(defaultPostForm);
-  const [message, setMessage] = useState("正在连接 CPZD Admin 后端...");
+  const [message, setMessage] = useState("正在连接 CPZD 后台服务...");
   const [isBusy, setIsBusy] = useState(false);
 
   const currentTitle = useMemo(
-    () => menuItems.find((item) => item.id === activeTab)?.name || "Dashboard",
+    () => menuItems.find((item) => item.id === activeTab)?.name || "仪表盘",
     [activeTab]
   );
 
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
       if (overviewData.success) setOverview(overviewData);
       if (postsData.success) setPosts(postsData.posts);
       if (assetsData.success) setAssets(assetsData.assets);
-      setMessage("CPZD Admin 已连接。");
+      setMessage("CPZD 后台服务已连接。");
     } catch (error) {
       setMessage("无法连接后端。请通过 update.bat 第 2 项或 my-blog-manager\\Start.bat 启动后台。");
     }
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
       <div className="mx-auto flex max-w-[1500px] flex-col gap-6 lg:flex-row">
         <aside className="w-full shrink-0 lg:w-72">
           <div className="rounded-3xl border border-white/50 bg-white/40 p-6 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/50">
-            <p className="text-xs font-black uppercase tracking-[0.35em] text-indigo-500">CPZD Admin</p>
+            <p className="text-xs font-black uppercase tracking-[0.35em] text-indigo-500">CPZD 后台</p>
             <h1 className="mt-3 text-2xl font-black">控制台</h1>
             <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
               管理 XHBlogs 本地文件，不连接数据库。
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
           >
             <div className="flex flex-col gap-4 border-b border-white/40 pb-5 dark:border-white/10 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-indigo-500">Local Console</p>
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-indigo-500">本地控制台</p>
                 <h2 className="mt-2 text-3xl font-black">{currentTitle}</h2>
               </div>
               <div className="flex gap-3">
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                   disabled={isBusy}
                   className="rounded-xl border border-white/50 bg-white/60 px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-white dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
                 >
-                  Refresh
+                  刷新
                 </button>
                 <button
                   onClick={deploy}
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <h3 className="text-lg font-black">{post.title}</h3>
-                            <p className="mt-1 text-xs font-bold text-slate-500">{post.slug}.md · {post.date || "No date"}</p>
+                            <p className="mt-1 text-xs font-bold text-slate-500">{post.slug}.md · {post.date || "无日期"}</p>
                             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{post.description}</p>
                           </div>
                           <button onClick={() => deletePost(post.slug)} className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white">
@@ -289,7 +289,7 @@ export default function AdminDashboard() {
                     <h3 className="mb-4 text-lg font-black">新增 Markdown 文章</h3>
                     <div className="space-y-3">
                       <Field label="标题" value={postForm.title} onChange={(value) => setPostForm({ ...postForm, title: value })} />
-                      <Field label="文件名 slug，可留空" value={postForm.slug} onChange={(value) => setPostForm({ ...postForm, slug: value })} />
+                      <Field label="文件名，可留空自动生成" value={postForm.slug} onChange={(value) => setPostForm({ ...postForm, slug: value })} />
                       <Field label="日期" value={postForm.date} onChange={(value) => setPostForm({ ...postForm, date: value })} />
                       <Field label="分类" value={postForm.category} onChange={(value) => setPostForm({ ...postForm, category: value })} />
                       <Field label="标签，逗号分隔" value={postForm.tags} onChange={(value) => setPostForm({ ...postForm, tags: value })} />

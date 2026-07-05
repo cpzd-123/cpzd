@@ -1,21 +1,6 @@
 import os
 import sys
 import subprocess
-import importlib.util
-
-# 1. 后端 Python 依赖清单
-PYTHON_PACKAGES = {
-    "webview": "pywebview",
-    "fastapi": "fastapi",
-    "uvicorn": "uvicorn",
-    "multipart": "python-multipart",
-    "requests": "requests",
-    "yaml": "PyYAML",
-    "markdown": "markdown",
-    "markdownify": "markdownify",
-    "httpx": "httpx",
-}
-
 
 def check_node_environment():
     """检查前端环境：是否存在 node_modules，不存在则自动安装"""
@@ -35,31 +20,17 @@ def check_node_environment():
         print("✅ 前端依赖已就绪。")
     return True
 
-
-def check_python_environment():
-    """检查后端 Python 环境"""
-    print("🔍 正在检查后端依赖 (Python)...")
-    python_exe = sys.executable
-    for import_name, install_name in PYTHON_PACKAGES.items():
-        if importlib.util.find_spec(import_name) is None:
-            print(f"📦 正在自动安装 Python 库: {install_name}...")
-            subprocess.check_call([python_exe, "-m", "pip", "install", install_name])
-    print("✅ 后端依赖已就绪。")
-    return True
-
-
 if __name__ == "__main__":
     # 强制切换到脚本所在目录
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     print("🌟 --- CPZD Admin · 本地控制台 --- 🌟")
 
-    # 先查前端，再查后端
-    if check_node_environment() and check_python_environment():
+    # 只检查 Node 依赖；Python 依赖由 Start.bat 预先检测，避免代理环境下自动 pip 安装失败。
+    if check_node_environment():
         print("\n🚀 所有环境准备就绪，正在点火启动...")
-        # 启动 launcher.py
-        subprocess.Popen([sys.executable, "launcher.py"],
-                         creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0)
+        # 启动浏览器网页管理模式，不再依赖 pywebview 桌面壳。
+        subprocess.call([sys.executable, "launcher_web.py"])
     else:
         print("\n⚠️ 环境检查未通过，请根据报错信息手动处理。")
         input("按回车键退出...")

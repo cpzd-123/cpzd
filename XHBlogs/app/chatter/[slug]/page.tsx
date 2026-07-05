@@ -20,7 +20,6 @@ import Navbar from '../../../components/Navbar';
 import PageTransition from '../../../components/PageTransition';
 import { siteConfig } from '../../../siteConfig';
 import ClientSocials from '../../../components/ClientSocials';
-import SidebarLyric from '../../../components/SidebarLyric';
 import BackButton from '../../../components/BackButton';
 
 export async function generateStaticParams() {
@@ -291,7 +290,6 @@ export default async function ChatterDetail({ params }: { params: Promise<{ slug
               <ClientSocials />
             </div>
 
-            <SidebarLyric />
 
             <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl rounded-3xl p-6 border border-white/40 dark:border-white/10 shadow-xl">
               <div className="flex justify-between items-center mb-6">

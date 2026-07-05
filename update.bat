@@ -33,11 +33,7 @@ goto menu
 
 :admin
 cd /d "%ADMIN%"
-if exist "Start.bat" (
-  call Start.bat
-) else (
-  npm run dev
-)
+call Start.bat
 pause
 goto menu
 

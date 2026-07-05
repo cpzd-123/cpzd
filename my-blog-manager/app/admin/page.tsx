@@ -27,6 +27,41 @@ type AssetItem = {
   size: number;
 };
 
+type ProjectItem = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  githubUrl: string;
+  tags: string[];
+};
+
+type MomentItem = {
+  id: string;
+  date: string;
+  location?: string;
+  images?: string[];
+  content: string;
+};
+
+type FriendItem = {
+  id: string;
+  name: string;
+  url: string;
+  description: string;
+  avatar: string;
+  themeColor: string;
+};
+
+type AlbumItem = {
+  id: string;
+  title: string;
+  description: string;
+  cover: string;
+  date: string;
+  photos: { url: string; caption?: string }[];
+};
+
 const menuItems = [
   { id: "dashboard", name: "仪表盘" },
   { id: "config", name: "站点配置" },
@@ -51,6 +86,41 @@ const defaultPostForm = {
   content: "这里写正文。",
 };
 
+const defaultProjectForm = {
+  id: "",
+  name: "",
+  description: "",
+  icon: "✨",
+  githubUrl: "",
+  tags: "CPZD",
+};
+
+const defaultMomentForm = {
+  id: "",
+  date: new Date().toISOString().slice(0, 16),
+  location: "",
+  images: "",
+  content: "这里写动态内容。",
+};
+
+const defaultFriendForm = {
+  id: "",
+  name: "",
+  url: "",
+  description: "",
+  avatar: "",
+  themeColor: "#6366f1",
+};
+
+const defaultAlbumForm = {
+  id: "",
+  title: "",
+  description: "",
+  cover: "",
+  date: new Date().toISOString().slice(0, 7).replace("-", "."),
+  photos: "",
+};
+
 async function getApiBase() {
   const response = await fetch(`/backend_config.json?t=${Date.now()}`);
   if (!response.ok) throw new Error("backend_config.json not found");
@@ -64,7 +134,15 @@ export default function AdminDashboard() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [assets, setAssets] = useState<AssetItem[]>([]);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [moments, setMoments] = useState<MomentItem[]>([]);
+  const [friends, setFriends] = useState<FriendItem[]>([]);
+  const [albums, setAlbums] = useState<AlbumItem[]>([]);
   const [postForm, setPostForm] = useState(defaultPostForm);
+  const [projectForm, setProjectForm] = useState(defaultProjectForm);
+  const [momentForm, setMomentForm] = useState(defaultMomentForm);
+  const [friendForm, setFriendForm] = useState(defaultFriendForm);
+  const [albumForm, setAlbumForm] = useState(defaultAlbumForm);
   const [message, setMessage] = useState("正在连接 CPZD 后台服务...");
   const [isBusy, setIsBusy] = useState(false);
 
@@ -78,18 +156,30 @@ export default function AdminDashboard() {
       const base = apiBase || await getApiBase();
       setApiBase(base);
 
-      const [overviewRes, postsRes, assetsRes] = await Promise.all([
+      const [overviewRes, postsRes, assetsRes, projectsRes, momentsRes, friendsRes, albumsRes] = await Promise.all([
         fetch(`${base}/overview`, { cache: "no-store" }),
         fetch(`${base}/posts`, { cache: "no-store" }),
         fetch(`${base}/assets`, { cache: "no-store" }),
+        fetch(`${base}/projects`, { cache: "no-store" }),
+        fetch(`${base}/moments`, { cache: "no-store" }),
+        fetch(`${base}/friends`, { cache: "no-store" }),
+        fetch(`${base}/albums`, { cache: "no-store" }),
       ]);
       const overviewData = await overviewRes.json();
       const postsData = await postsRes.json();
       const assetsData = await assetsRes.json();
+      const projectsData = await projectsRes.json();
+      const momentsData = await momentsRes.json();
+      const friendsData = await friendsRes.json();
+      const albumsData = await albumsRes.json();
 
       if (overviewData.success) setOverview(overviewData);
       if (postsData.success) setPosts(postsData.posts);
       if (assetsData.success) setAssets(assetsData.assets);
+      if (projectsData.success) setProjects(projectsData.projects);
+      if (momentsData.success) setMoments(momentsData.moments);
+      if (friendsData.success) setFriends(friendsData.friends);
+      if (albumsData.success) setAlbums(albumsData.albums);
       setMessage("CPZD 后台服务已连接。");
     } catch (error) {
       setMessage("无法连接后端。请通过 update.bat 第 2 项或 my-blog-manager\\Start.bat 启动后台。");
@@ -99,6 +189,32 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const editPost = async (slug: string) => {
+    if (!apiBase) return;
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/posts/${slug}`, { cache: "no-store" });
+      const data = await response.json();
+      if (!data.success) throw new Error("读取失败");
+      const post = data.post;
+      setPostForm({
+        slug: post.slug || slug,
+        title: post.title || "",
+        date: String(post.date || new Date().toISOString().slice(0, 10)),
+        category: post.category || "Records",
+        tags: Array.isArray(post.tags) ? post.tags.join(", ") : String(post.tags || ""),
+        description: post.description || "",
+        cover: post.cover || "",
+        content: post.content || "",
+      });
+      setMessage(`正在编辑文章：${post.title || slug}`);
+    } catch (error) {
+      setMessage("读取文章失败，请确认后台服务正常运行。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
 
   const savePost = async () => {
     if (!apiBase || !postForm.title.trim()) {
@@ -138,6 +254,216 @@ export default function AdminDashboard() {
       await loadData();
     } catch (error) {
       setMessage("删除失败。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const editProject = (project: ProjectItem) => {
+    setProjectForm({
+      id: project.id,
+      name: project.name,
+      description: project.description || "",
+      icon: project.icon || "✨",
+      githubUrl: project.githubUrl || "",
+      tags: Array.isArray(project.tags) ? project.tags.join(", ") : "",
+    });
+    setMessage(`正在编辑项目：${project.name}`);
+  };
+
+  const saveProject = async () => {
+    if (!apiBase || !projectForm.name.trim()) {
+      setMessage("请先填写项目名称。");
+      return;
+    }
+
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...projectForm,
+          tags: projectForm.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+        }),
+      });
+      const data = await response.json();
+      setMessage(data.message || "项目已保存。");
+      setProjectForm(defaultProjectForm);
+      await loadData();
+    } catch (error) {
+      setMessage("项目保存失败。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    if (!apiBase || !confirm(`确认删除项目 ${id}？`)) return;
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/projects/${id}`, { method: "DELETE" });
+      const data = await response.json();
+      setMessage(data.message || "项目已删除。");
+      await loadData();
+    } catch (error) {
+      setMessage("项目删除失败。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const editMoment = (moment: MomentItem) => {
+    setMomentForm({
+      id: moment.id,
+      date: String(moment.date || new Date().toISOString().slice(0, 16)).slice(0, 16),
+      location: moment.location || "",
+      images: Array.isArray(moment.images) ? moment.images.join(", ") : "",
+      content: moment.content || "",
+    });
+    setMessage(`正在编辑动态：${moment.id}`);
+  };
+
+  const saveMoment = async () => {
+    if (!apiBase || !momentForm.content.trim()) {
+      setMessage("请先填写动态内容。");
+      return;
+    }
+
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/moments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...momentForm,
+          images: momentForm.images.split(",").map((image) => image.trim()).filter(Boolean),
+        }),
+      });
+      const data = await response.json();
+      setMessage(data.message || "动态已保存。");
+      setMomentForm(defaultMomentForm);
+      await loadData();
+    } catch (error) {
+      setMessage("动态保存失败。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const deleteMoment = async (id: string) => {
+    if (!apiBase || !confirm(`确认删除动态 ${id}？`)) return;
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/moments/${id}`, { method: "DELETE" });
+      const data = await response.json();
+      setMessage(data.message || "动态已删除。");
+      await loadData();
+    } catch (error) {
+      setMessage("动态删除失败。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const editFriend = (friend: FriendItem) => {
+    setFriendForm({
+      id: friend.id,
+      name: friend.name,
+      url: friend.url || "",
+      description: friend.description || "",
+      avatar: friend.avatar || "",
+      themeColor: friend.themeColor || "#6366f1",
+    });
+    setMessage(`正在编辑友链：${friend.name}`);
+  };
+
+  const saveFriend = async () => {
+    if (!apiBase || !friendForm.name.trim()) {
+      setMessage("请先填写友链名称。");
+      return;
+    }
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/friends`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(friendForm),
+      });
+      const data = await response.json();
+      setMessage(data.message || "友链已保存。");
+      setFriendForm(defaultFriendForm);
+      await loadData();
+    } catch (error) {
+      setMessage("友链保存失败。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const deleteFriend = async (id: string) => {
+    if (!apiBase || !confirm(`确认删除友链 ${id}？`)) return;
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/friends/${id}`, { method: "DELETE" });
+      const data = await response.json();
+      setMessage(data.message || "友链已删除。");
+      await loadData();
+    } catch (error) {
+      setMessage("友链删除失败。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const editAlbum = (album: AlbumItem) => {
+    setAlbumForm({
+      id: album.id,
+      title: album.title,
+      description: album.description || "",
+      cover: album.cover || "",
+      date: album.date || "",
+      photos: Array.isArray(album.photos) ? album.photos.map((photo) => photo.url).join(", ") : "",
+    });
+    setMessage(`正在编辑相册：${album.title}`);
+  };
+
+  const saveAlbum = async () => {
+    if (!apiBase || !albumForm.title.trim()) {
+      setMessage("请先填写相册标题。");
+      return;
+    }
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/albums`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...albumForm,
+          photos: albumForm.photos.split(",").map((photo) => photo.trim()).filter(Boolean),
+        }),
+      });
+      const data = await response.json();
+      setMessage(data.message || "相册已保存。");
+      setAlbumForm(defaultAlbumForm);
+      await loadData();
+    } catch (error) {
+      setMessage("相册保存失败。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const deleteAlbum = async (id: string) => {
+    if (!apiBase || !confirm(`确认删除相册 ${id}？`)) return;
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/albums/${id}`, { method: "DELETE" });
+      const data = await response.json();
+      setMessage(data.message || "相册已删除。");
+      await loadData();
+    } catch (error) {
+      setMessage("相册删除失败。");
     } finally {
       setIsBusy(false);
     }
@@ -270,23 +596,37 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_420px]">
                   <div className="space-y-3">
                     {posts.map((post) => (
-                      <div key={post.slug} className="rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/50">
+                      <div
+                        key={post.slug}
+                        onClick={() => editPost(post.slug)}
+                        className="cursor-pointer rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-400/50 hover:shadow-indigo-500/15 dark:border-white/10 dark:bg-slate-800/50"
+                      >
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <h3 className="text-lg font-black">{post.title}</h3>
                             <p className="mt-1 text-xs font-bold text-slate-500">{post.slug}.md · {post.date || "无日期"}</p>
                             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{post.description}</p>
                           </div>
-                          <button onClick={() => deletePost(post.slug)} className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white">
-                            删除
-                          </button>
+                          <div className="flex shrink-0 gap-2">
+                            <button onClick={(event) => { event.stopPropagation(); editPost(post.slug); }} className="rounded-lg bg-indigo-500/10 px-3 py-2 text-xs font-black text-indigo-600 hover:bg-indigo-500 hover:text-white">
+                              编辑
+                            </button>
+                            <button onClick={(event) => { event.stopPropagation(); deletePost(post.slug); }} className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white">
+                              删除
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
 
                   <div className="rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/50">
-                    <h3 className="mb-4 text-lg font-black">新增 Markdown 文章</h3>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className="text-lg font-black">{postForm.slug ? "编辑 Markdown 文章" : "新增 Markdown 文章"}</h3>
+                      <button onClick={() => setPostForm(defaultPostForm)} className="rounded-lg bg-white/60 px-3 py-2 text-xs font-black text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300">
+                        新建
+                      </button>
+                    </div>
                     <div className="space-y-3">
                       <Field label="标题" value={postForm.title} onChange={(value) => setPostForm({ ...postForm, title: value })} />
                       <Field label="文件名，可留空自动生成" value={postForm.slug} onChange={(value) => setPostForm({ ...postForm, slug: value })} />
@@ -304,7 +644,242 @@ export default function AdminDashboard() {
                         />
                       </label>
                       <button onClick={savePost} disabled={isBusy} className="w-full rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-indigo-500/30 disabled:opacity-60">
-                        生成到 XHBlogs/posts
+                        {postForm.slug ? "保存文章修改" : "生成到 XHBlogs/posts"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "projects" && (
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_420px]">
+                  <div className="space-y-3">
+                    {projects.map((project) => (
+                      <div
+                        key={project.id}
+                        onClick={() => editProject(project)}
+                        className="cursor-pointer rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-400/50 hover:shadow-indigo-500/15 dark:border-white/10 dark:bg-slate-800/50"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <h3 className="text-lg font-black">{project.icon} {project.name}</h3>
+                            <p className="mt-1 truncate text-xs font-bold text-slate-500">{project.githubUrl || "无链接"}</p>
+                            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{project.description}</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {(project.tags || []).map((tag) => (
+                                <span key={tag} className="rounded-md bg-indigo-500/10 px-2 py-1 text-[10px] font-black text-indigo-600 dark:text-indigo-300">{tag}</span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button onClick={(event) => { event.stopPropagation(); editProject(project); }} className="rounded-lg bg-indigo-500/10 px-3 py-2 text-xs font-black text-indigo-600 hover:bg-indigo-500 hover:text-white">
+                              编辑
+                            </button>
+                            <button onClick={(event) => { event.stopPropagation(); deleteProject(project.id); }} className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white">
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/50">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className="text-lg font-black">{projectForm.id ? "编辑项目" : "新增项目"}</h3>
+                      <button onClick={() => setProjectForm(defaultProjectForm)} className="rounded-lg bg-white/60 px-3 py-2 text-xs font-black text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300">
+                        新建
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <Field label="项目 ID，可留空自动生成" value={projectForm.id} onChange={(value) => setProjectForm({ ...projectForm, id: value })} />
+                      <Field label="项目名称" value={projectForm.name} onChange={(value) => setProjectForm({ ...projectForm, name: value })} />
+                      <Field label="项目链接" value={projectForm.githubUrl} onChange={(value) => setProjectForm({ ...projectForm, githubUrl: value })} />
+                      <Field label="图标" value={projectForm.icon} onChange={(value) => setProjectForm({ ...projectForm, icon: value })} />
+                      <Field label="标签，逗号分隔" value={projectForm.tags} onChange={(value) => setProjectForm({ ...projectForm, tags: value })} />
+                      <label className="block">
+                        <span className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-500">项目描述</span>
+                        <textarea
+                          value={projectForm.description}
+                          onChange={(event) => setProjectForm({ ...projectForm, description: event.target.value })}
+                          className="min-h-28 w-full rounded-xl border border-white/50 bg-white/70 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-white/10 dark:bg-slate-900/60"
+                        />
+                      </label>
+                      <button onClick={saveProject} disabled={isBusy} className="w-full rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-indigo-500/30 disabled:opacity-60">
+                        {projectForm.id ? "保存项目修改" : "新增项目"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "moments" && (
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_420px]">
+                  <div className="space-y-3">
+                    {moments.map((moment) => (
+                      <div
+                        key={moment.id}
+                        onClick={() => editMoment(moment)}
+                        className="cursor-pointer rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-400/50 hover:shadow-indigo-500/15 dark:border-white/10 dark:bg-slate-800/50"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <h3 className="text-lg font-black">{moment.id}</h3>
+                            <p className="mt-1 text-xs font-bold text-slate-500">{moment.date || "无日期"} · {moment.location || "无地点"}</p>
+                            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600 line-clamp-3 dark:text-slate-300">{moment.content}</p>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button onClick={(event) => { event.stopPropagation(); editMoment(moment); }} className="rounded-lg bg-indigo-500/10 px-3 py-2 text-xs font-black text-indigo-600 hover:bg-indigo-500 hover:text-white">
+                              编辑
+                            </button>
+                            <button onClick={(event) => { event.stopPropagation(); deleteMoment(moment.id); }} className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white">
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/50">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className="text-lg font-black">{momentForm.id ? "编辑动态" : "新增动态"}</h3>
+                      <button onClick={() => setMomentForm(defaultMomentForm)} className="rounded-lg bg-white/60 px-3 py-2 text-xs font-black text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300">
+                        新建
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <Field label="动态 ID，可留空自动生成" value={momentForm.id} onChange={(value) => setMomentForm({ ...momentForm, id: value })} />
+                      <Field label="日期时间" value={momentForm.date} onChange={(value) => setMomentForm({ ...momentForm, date: value })} />
+                      <Field label="地点" value={momentForm.location} onChange={(value) => setMomentForm({ ...momentForm, location: value })} />
+                      <Field label="图片路径，逗号分隔" value={momentForm.images} onChange={(value) => setMomentForm({ ...momentForm, images: value })} />
+                      <label className="block">
+                        <span className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-500">动态内容</span>
+                        <textarea
+                          value={momentForm.content}
+                          onChange={(event) => setMomentForm({ ...momentForm, content: event.target.value })}
+                          className="min-h-40 w-full rounded-xl border border-white/50 bg-white/70 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-white/10 dark:bg-slate-900/60"
+                        />
+                      </label>
+                      <button onClick={saveMoment} disabled={isBusy} className="w-full rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-indigo-500/30 disabled:opacity-60">
+                        {momentForm.id ? "保存动态修改" : "新增动态"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "gallery" && (
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_420px]">
+                  <div className="space-y-3">
+                    {albums.map((album) => (
+                      <div
+                        key={album.id}
+                        onClick={() => editAlbum(album)}
+                        className="cursor-pointer overflow-hidden rounded-2xl border border-white/40 bg-white/45 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-400/50 hover:shadow-indigo-500/15 dark:border-white/10 dark:bg-slate-800/50"
+                      >
+                        <div className="grid gap-4 p-4 md:grid-cols-[160px_1fr_auto]">
+                          <div className="aspect-video overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-950">
+                            {album.cover ? <img src={album.cover} alt={album.title} className="h-full w-full object-cover" /> : null}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-lg font-black">{album.title}</h3>
+                            <p className="mt-1 text-xs font-bold text-slate-500">{album.id} · {album.date || "无日期"} · {album.photos?.length || 0} 张</p>
+                            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{album.description}</p>
+                          </div>
+                          <div className="flex shrink-0 gap-2 md:flex-col">
+                            <button onClick={(event) => { event.stopPropagation(); editAlbum(album); }} className="rounded-lg bg-indigo-500/10 px-3 py-2 text-xs font-black text-indigo-600 hover:bg-indigo-500 hover:text-white">
+                              编辑
+                            </button>
+                            <button onClick={(event) => { event.stopPropagation(); deleteAlbum(album.id); }} className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white">
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/50">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className="text-lg font-black">{albumForm.id ? "编辑相册" : "新增相册"}</h3>
+                      <button onClick={() => setAlbumForm(defaultAlbumForm)} className="rounded-lg bg-white/60 px-3 py-2 text-xs font-black text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300">
+                        新建
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <Field label="相册 ID，可留空自动生成" value={albumForm.id} onChange={(value) => setAlbumForm({ ...albumForm, id: value })} />
+                      <Field label="相册标题" value={albumForm.title} onChange={(value) => setAlbumForm({ ...albumForm, title: value })} />
+                      <Field label="日期" value={albumForm.date} onChange={(value) => setAlbumForm({ ...albumForm, date: value })} />
+                      <Field label="封面路径" value={albumForm.cover} onChange={(value) => setAlbumForm({ ...albumForm, cover: value })} />
+                      <Field label="图片路径，逗号分隔" value={albumForm.photos} onChange={(value) => setAlbumForm({ ...albumForm, photos: value })} />
+                      <label className="block">
+                        <span className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-500">相册描述</span>
+                        <textarea
+                          value={albumForm.description}
+                          onChange={(event) => setAlbumForm({ ...albumForm, description: event.target.value })}
+                          className="min-h-28 w-full rounded-xl border border-white/50 bg-white/70 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-white/10 dark:bg-slate-900/60"
+                        />
+                      </label>
+                      <button onClick={saveAlbum} disabled={isBusy} className="w-full rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-indigo-500/30 disabled:opacity-60">
+                        {albumForm.id ? "保存相册修改" : "新增相册"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "friends" && (
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_420px]">
+                  <div className="space-y-3">
+                    {friends.map((friend) => (
+                      <div
+                        key={friend.id}
+                        onClick={() => editFriend(friend)}
+                        className="cursor-pointer rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-400/50 hover:shadow-indigo-500/15 dark:border-white/10 dark:bg-slate-800/50"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <h3 className="text-lg font-black">{friend.name}</h3>
+                            <p className="mt-1 truncate text-xs font-bold text-slate-500">{friend.url || "无链接"}</p>
+                            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{friend.description}</p>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button onClick={(event) => { event.stopPropagation(); editFriend(friend); }} className="rounded-lg bg-indigo-500/10 px-3 py-2 text-xs font-black text-indigo-600 hover:bg-indigo-500 hover:text-white">
+                              编辑
+                            </button>
+                            <button onClick={(event) => { event.stopPropagation(); deleteFriend(friend.id); }} className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white">
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-2xl border border-white/40 bg-white/45 p-4 shadow-sm dark:border-white/10 dark:bg-slate-800/50">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className="text-lg font-black">{friendForm.id ? "编辑友链" : "新增友链"}</h3>
+                      <button onClick={() => setFriendForm(defaultFriendForm)} className="rounded-lg bg-white/60 px-3 py-2 text-xs font-black text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300">
+                        新建
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <Field label="友链 ID，可留空自动生成" value={friendForm.id} onChange={(value) => setFriendForm({ ...friendForm, id: value })} />
+                      <Field label="名称" value={friendForm.name} onChange={(value) => setFriendForm({ ...friendForm, name: value })} />
+                      <Field label="链接" value={friendForm.url} onChange={(value) => setFriendForm({ ...friendForm, url: value })} />
+                      <Field label="头像路径" value={friendForm.avatar} onChange={(value) => setFriendForm({ ...friendForm, avatar: value })} />
+                      <Field label="主题色" value={friendForm.themeColor} onChange={(value) => setFriendForm({ ...friendForm, themeColor: value })} />
+                      <label className="block">
+                        <span className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-500">简介</span>
+                        <textarea
+                          value={friendForm.description}
+                          onChange={(event) => setFriendForm({ ...friendForm, description: event.target.value })}
+                          className="min-h-28 w-full rounded-xl border border-white/50 bg-white/70 px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-white/10 dark:bg-slate-900/60"
+                        />
+                      </label>
+                      <button onClick={saveFriend} disabled={isBusy} className="w-full rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-indigo-500/30 disabled:opacity-60">
+                        {friendForm.id ? "保存友链修改" : "新增友链"}
                       </button>
                     </div>
                   </div>
@@ -352,14 +927,6 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {["moments", "projects", "gallery", "friends"].includes(activeTab) && (
-                <div className="rounded-2xl border border-white/40 bg-white/45 p-8 text-center dark:border-white/10 dark:bg-slate-800/50">
-                  <h3 className="text-xl font-black">{currentTitle}</h3>
-                  <p className="mt-3 text-sm font-medium text-slate-500">
-                    第一阶段保留入口和布局。完整编辑功能放到第二阶段继续接入。
-                  </p>
-                </div>
-              )}
             </div>
           </motion.div>
         </main>

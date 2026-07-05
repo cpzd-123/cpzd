@@ -49,6 +49,71 @@ def write_markdown(path: Path, data: dict[str, Any], content: str) -> None:
     path.write_text(f"---\n{frontmatter}\n---\n\n{content.strip()}\n", encoding="utf-8")
 
 
+def read_ts_array(path: Path, export_name: str) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    raw = path.read_text(encoding="utf-8")
+    match = re.search(rf"export\s+const\s+{export_name}[^=]*=\s*(\[.*?\]);", raw, re.S)
+    if not match:
+        return []
+    json_like = re.sub(r",\s*([}}\]])", r"\1", match.group(1))
+    try:
+        return json.loads(json_like)
+    except json.JSONDecodeError:
+        return []
+
+
+def write_projects_file(projects: list[dict[str, Any]]) -> None:
+    projects_file = ensure_inside_site(SITE_ROOT / "data" / "projects.ts")
+    projects_file.parent.mkdir(parents=True, exist_ok=True)
+    json_str = json.dumps(projects, ensure_ascii=False, indent=2)
+    projects_file.write_text(
+        "// 🛡️ 本文件由 CPZD Admin 自动生成\n\n"
+        "export type Project = {\n"
+        "  id: string;\n"
+        "  name: string;\n"
+        "  description: string;\n"
+        "  icon: string;\n"
+        "  githubUrl: string;\n"
+        "  tags: string[];\n"
+        "};\n\n"
+        f"export const projectsData: Project[] = {json_str};\n",
+        encoding="utf-8",
+    )
+
+
+def write_friends_file(friends: list[dict[str, Any]]) -> None:
+    friends_file = ensure_inside_site(SITE_ROOT / "data" / "friends.ts")
+    friends_file.parent.mkdir(parents=True, exist_ok=True)
+    json_str = json.dumps(friends, ensure_ascii=False, indent=2)
+    friends_file.write_text(
+        "// 🛡️ 本文件由 CPZD Admin 自动生成\n\n"
+        "export interface Friend {\n"
+        "  id: string;\n"
+        "  name: string;\n"
+        "  url: string;\n"
+        "  description: string;\n"
+        "  avatar: string;\n"
+        "  themeColor: string;\n"
+        "}\n\n"
+        f"export const friendsData: Friend[] = {json_str};\n",
+        encoding="utf-8",
+    )
+
+
+def write_albums_file(albums: list[dict[str, Any]]) -> None:
+    albums_file = ensure_inside_site(SITE_ROOT / "data" / "albums.ts")
+    albums_file.parent.mkdir(parents=True, exist_ok=True)
+    json_str = json.dumps(albums, ensure_ascii=False, indent=2)
+    albums_file.write_text(
+        "// 🛡️ 本文件由 CPZD Admin 自动生成\n"
+        "export interface Photo { url: string; caption?: string; }\n"
+        "export interface Album { id: string; title: string; description: string; cover: string; date: string; photos: Photo[]; }\n\n"
+        f"export const albums: Album[] = {json_str};\n",
+        encoding="utf-8",
+    )
+
+
 def run_git(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["git", *args],
@@ -69,6 +134,41 @@ class PostPayload(BaseModel):
     description: str | None = ""
     cover: str | None = ""
     content: str | None = "这里写正文。"
+
+
+class ProjectPayload(BaseModel):
+    id: str | None = None
+    name: str
+    description: str | None = ""
+    icon: str | None = "✨"
+    githubUrl: str | None = ""
+    tags: list[str] | str | None = None
+
+
+class MomentPayload(BaseModel):
+    id: str | None = None
+    date: str | None = None
+    location: str | None = ""
+    images: list[str] | str | None = None
+    content: str | None = ""
+
+
+class FriendPayload(BaseModel):
+    id: str | None = None
+    name: str
+    url: str | None = ""
+    description: str | None = ""
+    avatar: str | None = ""
+    themeColor: str | None = "#6366f1"
+
+
+class AlbumPayload(BaseModel):
+    id: str | None = None
+    title: str
+    description: str | None = ""
+    cover: str | None = ""
+    date: str | None = ""
+    photos: list[str] | str | None = None
 
 
 class ConfigPayload(BaseModel):
@@ -169,6 +269,177 @@ async def delete_post(slug: str):
         raise HTTPException(status_code=404, detail="Post not found")
     path.unlink()
     return {"success": True, "message": "文章已删除", "slug": safe_slug}
+
+
+@router.get("/projects")
+async def list_projects():
+    projects_file = ensure_inside_site(SITE_ROOT / "data" / "projects.ts")
+    projects = read_ts_array(projects_file, "projectsData")
+    return {"success": True, "projects": projects}
+
+
+@router.post("/projects")
+async def save_project(payload: ProjectPayload):
+    projects_file = ensure_inside_site(SITE_ROOT / "data" / "projects.ts")
+    projects = read_ts_array(projects_file, "projectsData")
+    project_id = slugify(payload.id or payload.name)
+    tags = payload.tags or []
+    if isinstance(tags, str):
+        tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
+
+    project = {
+        "id": project_id,
+        "name": payload.name,
+        "githubUrl": payload.githubUrl or "",
+        "description": payload.description or "",
+        "icon": payload.icon or "✨",
+        "tags": tags,
+    }
+    projects = [item for item in projects if item.get("id") != project_id]
+    projects.insert(0, project)
+    write_projects_file(projects)
+    return {"success": True, "message": "项目已保存。", "project": project}
+
+
+@router.delete("/projects/{project_id}")
+async def delete_project(project_id: str):
+    projects_file = ensure_inside_site(SITE_ROOT / "data" / "projects.ts")
+    projects = read_ts_array(projects_file, "projectsData")
+    safe_id = slugify(project_id)
+    next_projects = [item for item in projects if item.get("id") != safe_id]
+    write_projects_file(next_projects)
+    return {"success": True, "message": "项目已删除。", "id": safe_id}
+
+
+@router.get("/moments")
+async def list_moments():
+    moments_dir = ensure_inside_site(SITE_ROOT / "moments")
+    moments: list[dict[str, Any]] = []
+    if moments_dir.exists():
+        for path in sorted(moments_dir.glob("*.md")):
+            data, content = read_frontmatter(path)
+            moments.append({
+                "id": path.stem,
+                "date": str(data.get("date", "")),
+                "location": data.get("location", ""),
+                "images": data.get("images", []),
+                "content": content,
+            })
+    moments.sort(key=lambda item: item.get("date", ""), reverse=True)
+    return {"success": True, "moments": moments}
+
+
+@router.get("/moments/{moment_id}")
+async def get_moment(moment_id: str):
+    safe_id = slugify(moment_id)
+    path = ensure_inside_site(SITE_ROOT / "moments" / f"{safe_id}.md")
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Moment not found")
+    data, content = read_frontmatter(path)
+    return {"success": True, "moment": {"id": safe_id, **data, "content": content}}
+
+
+@router.post("/moments")
+async def save_moment(payload: MomentPayload):
+    moment_id = slugify(payload.id or f"moment-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+    path = ensure_inside_site(SITE_ROOT / "moments" / f"{moment_id}.md")
+    images = payload.images or []
+    if isinstance(images, str):
+        images = [image.strip() for image in images.split(",") if image.strip()]
+
+    data = {
+        "date": payload.date or datetime.now().isoformat(timespec="seconds"),
+        "location": payload.location or "",
+        "images": images,
+    }
+    write_markdown(path, data, payload.content or "")
+    return {"success": True, "message": "动态已保存。", "id": moment_id}
+
+
+@router.delete("/moments/{moment_id}")
+async def delete_moment(moment_id: str):
+    safe_id = slugify(moment_id)
+    path = ensure_inside_site(SITE_ROOT / "moments" / f"{safe_id}.md")
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Moment not found")
+    path.unlink()
+    return {"success": True, "message": "动态已删除。", "id": safe_id}
+
+
+@router.get("/friends")
+async def list_friends():
+    friends_file = ensure_inside_site(SITE_ROOT / "data" / "friends.ts")
+    friends = read_ts_array(friends_file, "friendsData")
+    return {"success": True, "friends": friends}
+
+
+@router.post("/friends")
+async def save_friend(payload: FriendPayload):
+    friends_file = ensure_inside_site(SITE_ROOT / "data" / "friends.ts")
+    friends = read_ts_array(friends_file, "friendsData")
+    friend_id = slugify(payload.id or payload.name)
+    friend = {
+        "id": friend_id,
+        "name": payload.name,
+        "url": payload.url or "",
+        "description": payload.description or "",
+        "avatar": payload.avatar or "",
+        "themeColor": payload.themeColor or "#6366f1",
+    }
+    friends = [item for item in friends if item.get("id") != friend_id]
+    friends.insert(0, friend)
+    write_friends_file(friends)
+    return {"success": True, "message": "友链已保存。", "friend": friend}
+
+
+@router.delete("/friends/{friend_id}")
+async def delete_friend(friend_id: str):
+    friends_file = ensure_inside_site(SITE_ROOT / "data" / "friends.ts")
+    friends = read_ts_array(friends_file, "friendsData")
+    safe_id = slugify(friend_id)
+    write_friends_file([item for item in friends if item.get("id") != safe_id])
+    return {"success": True, "message": "友链已删除。", "id": safe_id}
+
+
+@router.get("/albums")
+async def list_albums():
+    albums_file = ensure_inside_site(SITE_ROOT / "data" / "albums.ts")
+    albums = read_ts_array(albums_file, "albums")
+    return {"success": True, "albums": albums}
+
+
+@router.post("/albums")
+async def save_album(payload: AlbumPayload):
+    albums_file = ensure_inside_site(SITE_ROOT / "data" / "albums.ts")
+    albums = read_ts_array(albums_file, "albums")
+    album_id = slugify(payload.id or payload.title)
+    photos = payload.photos or []
+    if isinstance(photos, str):
+        photos = [{"url": photo.strip(), "caption": ""} for photo in photos.split(",") if photo.strip()]
+    else:
+        photos = [{"url": str(photo), "caption": ""} for photo in photos if str(photo).strip()]
+
+    album = {
+        "id": album_id,
+        "title": payload.title,
+        "description": payload.description or "",
+        "cover": payload.cover or (photos[0]["url"] if photos else ""),
+        "date": payload.date or datetime.now().strftime("%Y.%m"),
+        "photos": photos,
+    }
+    albums = [item for item in albums if item.get("id") != album_id]
+    albums.insert(0, album)
+    write_albums_file(albums)
+    return {"success": True, "message": "相册已保存。", "album": album}
+
+
+@router.delete("/albums/{album_id}")
+async def delete_album(album_id: str):
+    albums_file = ensure_inside_site(SITE_ROOT / "data" / "albums.ts")
+    albums = read_ts_array(albums_file, "albums")
+    safe_id = slugify(album_id)
+    write_albums_file([item for item in albums if item.get("id") != safe_id])
+    return {"success": True, "message": "相册已删除。", "id": safe_id}
 
 
 @router.get("/assets")

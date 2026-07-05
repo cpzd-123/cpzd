@@ -21,7 +21,6 @@ import { siteConfig } from '../../../siteConfig';
 import ClientSocials from '../../../components/ClientSocials';
 import ClientTOC from '../../../components/ClientTOC';
 import BackButton from '../../../components/BackButton';
-import Comments from '../../../components/Comments';
 import SidebarLyric from '../../../components/SidebarLyric';
 
 export async function generateStaticParams() {
@@ -260,12 +259,8 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
                 />
               </div>
 
-              <div className="mt-12 md:mt-16">
-                <Comments />
               </div>
-
-            </div>
-          </article>
+            </article>
 
           <aside className="w-full lg:w-[320px] flex flex-col gap-6 flex-shrink-0">
             <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl rounded-3xl p-6 border border-white/40 dark:border-white/10 shadow-xl text-center">

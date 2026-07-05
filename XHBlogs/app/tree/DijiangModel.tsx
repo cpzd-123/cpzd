@@ -2,18 +2,16 @@
 
 import { Suspense, useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, Loader2, FileText, MessageCircle, Lightbulb, ChevronLeft, ChevronRight, Layers, ChevronDown, ShieldAlert, AlertTriangle, Crosshair, Activity, Cpu, Camera, Users, Grid, X, LockKeyhole, Shield } from 'lucide-react';
+import { Rocket, Loader2, FileText, MessageCircle, Lightbulb, ChevronLeft, ChevronRight, Layers, ChevronDown, ShieldAlert, AlertTriangle, Crosshair, Activity, Cpu, Camera, Grid, X, LockKeyhole, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Html } from '@react-three/drei';
 
-import LabComments from '../../components/LabComments';
 import { siteConfig } from '../../siteConfig';
 
 import { albums } from '../../data/albums';
-import { friendsData } from '../../data/friends';
 
 function seededRandom(seed: number) {
   const x = Math.sin(seed) * 10000;
@@ -339,7 +337,7 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
     if (siteConfig?.enableLevelSystem !== true) return null;
 
     const totalPhotos = (albums || []).reduce((acc: number, curr: any) => acc + (curr.photos?.length || 0), 0);
-    const totalFriends = (friendsData || []).length;
+    const totalFriends = 0;
 
     const parseDateStr = (dateVal: any) => {
       try {
@@ -455,17 +453,6 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
       if (totalPhotos >= conf.num) ownedIds.add(id);
     });
 
-    const friendConfig = [
-      { num: 10, tier: 3, title: '临时干员' },
-      { num: 20, tier: 6, title: '战术分队' },
-      { num: 50, tier: 10, title: '跨界同盟' }
-    ];
-    friendConfig.forEach(conf => {
-      const id = `friend-${conf.num}`;
-      allCatalogBadges.push({ id, title: conf.title, typeLabel: '协同协议', condition: `缔结 ${conf.num} 份干员协议`, icon: Users, colorTier: conf.tier, group: 'friend' });
-      if (totalFriends >= conf.num) ownedIds.add(id);
-    });
-
     const ownedBadges = allCatalogBadges.filter(b => ownedIds.has(b.id));
 
     return {
@@ -489,36 +476,10 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
   const [year, month] = currentMonthStr.split('-');
   const formattedMonth = `RECORD.Y${year.substring(2)}M${parseInt(month)}`;
 
-  const [activeCategory, setActiveCategory] = useState<'post' | 'chatter' | 'moment' | 'message' | null>(null);
+  const [activeCategory, setActiveCategory] = useState<'post' | 'chatter' | 'moment' | null>(null);
 
   useEffect(() => {
-    if (!mounted) return;
-    let isMounted = true;
-    const fetchGitalkComments = async () => {
-      try {
-        const { owner, repo } = siteConfig.gitalkConfig;
-        const targetLabel = `workshop-${currentMonthStr}`;
-        const issueRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues?labels=${targetLabel}`);
-        const issues = await issueRes.json();
-
-        if (issues && issues.length > 0) {
-          const commentsRes = await fetch(issues[0].comments_url);
-          const comments = await commentsRes.json();
-          if (isMounted && Array.isArray(comments)) {
-            const fetchedWishes = comments.map((c: any) => ({
-              id: c.id.toString(), content: c.body, title: c.body, author: c.user.login, type: 'message', date: c.created_at,
-            }));
-            setRealWishes(fetchedWishes);
-            return;
-          }
-        }
-        if (isMounted) setRealWishes([]);
-      } catch (err) {
-        if (isMounted) setRealWishes([]);
-      }
-    };
-    fetchGitalkComments();
-    return () => { isMounted = false; };
+    if (mounted) setRealWishes([]);
   }, [currentMonthStr, mounted]);
 
   const currentMonthRecords = useMemo(() => {
@@ -533,9 +494,8 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
   const countPost = currentMonthRecords.filter(r => r.type === 'post').length;
   const countChatter = currentMonthRecords.filter(r => r.type === 'chatter').length;
   const countMoment = currentMonthRecords.filter(r => r.type === 'moment').length;
-  const countMessage = currentMonthRecords.filter(r => r.type === 'message').length;
 
-  const handleCategoryClick = (cat: 'post' | 'chatter' | 'moment' | 'message', count: number) => {
+  const handleCategoryClick = (cat: 'post' | 'chatter' | 'moment', count: number) => {
     if (count === 0) {
       setSysTip(`[ SYSTEM ALERT ] 该区域暂无数据归档`);
       setActiveCategory(null);
@@ -731,17 +691,6 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
                   ))}
                 </div>
 
-                <div className="flex items-center gap-4 mt-16 mb-8">
-                  <div className="w-12 h-px bg-indigo-400" />
-                  <span className="text-slate-300 text-[10px] font-black tracking-[0.2em] uppercase flex items-center gap-2"><Users size={14} className="text-indigo-400"/> 协同协议 (COMM PROTOCOLS)</span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-indigo-400/50 to-transparent" />
-                </div>
-                <div className="flex flex-wrap gap-x-6 gap-y-10 justify-center">
-                  {rpgStats.allCatalogBadges.filter(b => b.group === 'friend').map(b => (
-                    <OperatorToken key={b.id} badge={b} locked={!rpgStats.ownedIds.has(b.id)} />
-                  ))}
-                </div>
-
               </div>
             </motion.div>
           </div>
@@ -797,10 +746,6 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
             <div className="text-left flex-1"><div className="text-sm font-bold tracking-wider">BEACON</div><div className={`text-[9px] font-mono ${activeCategory === 'moment' ? 'text-black/60' : 'text-slate-500'}`}>观测信标</div></div>
           </button>
 
-          <button onClick={() => handleCategoryClick('message', countMessage)} className={`flex items-center gap-4 w-60 p-2 border transition-all duration-300 backdrop-blur-md shadow-sm ${activeCategory === 'message' ? 'bg-[#f1f5f9] border-[#f1f5f9] text-[#111]' : 'bg-[#1e1e1e]/80 border-[#333] hover:bg-[#2a2a2a] text-slate-300'}`}>
-            <div className={`p-2 ${activeCategory === 'message' ? 'bg-black/20' : 'bg-[#111] border border-[#333] text-[#f1f5f9]'}`}><ShieldAlert size={16} /></div>
-            <div className="text-left flex-1"><div className="text-sm font-bold tracking-wider">RECEPTION</div><div className={`text-[9px] font-mono ${activeCategory === 'message' ? 'text-black/60' : 'text-slate-500'}`}>访客申请</div></div>
-          </button>
         </div>
 
         <div className="absolute bottom-6 right-4 md:right-10 z-30 pointer-events-auto flex flex-col items-end gap-3">
@@ -822,10 +767,6 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
                   <div className="flex items-center justify-between text-xs font-mono text-slate-300">
                     <span className="flex items-center gap-1.5 font-bold"><span className="w-1.5 h-1.5 bg-[#10b981]"></span> BEACON</span>
                     <span className="font-bold text-[#10b981] text-sm">{countMoment}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-mono text-slate-300">
-                    <span className="flex items-center gap-1.5 font-bold"><span className="w-1.5 h-1.5 bg-[#f1f5f9]"></span> MSG</span>
-                    <span className="font-bold text-[#f1f5f9] text-sm">{countMessage}</span>
                   </div>
                 </motion.div>
               </AnimatePresence>
@@ -862,15 +803,6 @@ export default function DijiangModel({ posts = [], chatters = [], moments = [] }
             </Canvas>
           </Suspense>
         </div>
-      </div>
-
-      {/* 🌟 底座：留言板 */}
-      <div className="w-full max-w-4xl mx-auto mt-10 mb-16 px-4 relative z-0">
-         <h2 className="text-xl font-black text-slate-800 dark:text-white mb-2 font-serif text-center uppercase tracking-[0.2em] border-b border-slate-300 dark:border-[#333] pb-4 flex flex-col items-center gap-2">
-            <span className="text-[10px] text-slate-500 font-mono">ENDFIELD RECEPTION CENTER</span>
-            「 {formattedMonth} 的通讯接收枢纽 」
-         </h2>
-         <LabComments key={`gitalk-${currentMonthStr}`} pageId={`workshop-${currentMonthStr}`} />
       </div>
 
     </motion.div>

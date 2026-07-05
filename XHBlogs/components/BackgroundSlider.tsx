@@ -33,6 +33,36 @@ export default function BackgroundSlider() {
           }}
         />
       ))}
+      {siteConfig.desktopLightBg && (
+        <div
+          className="hidden md:block dark:hidden absolute inset-0 transition-opacity duration-[2000ms] ease-in-out transform-gpu"
+          style={{
+            backgroundImage: `url(${siteConfig.desktopLightBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+      )}
+      {siteConfig.mobileLightBg && (
+        <div
+          className="block md:hidden dark:hidden absolute inset-0 transition-opacity duration-[2000ms] ease-in-out transform-gpu"
+          style={{
+            backgroundImage: `url(${siteConfig.mobileLightBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+          }}
+        />
+      )}
+      {siteConfig.mobileDarkBg && (
+        <div
+          className="hidden dark:block md:dark:hidden absolute inset-0 transition-opacity duration-[2000ms] ease-in-out transform-gpu"
+          style={{
+            backgroundImage: `url(${siteConfig.mobileDarkBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+          }}
+        />
+      )}
     </div>
   );
 }

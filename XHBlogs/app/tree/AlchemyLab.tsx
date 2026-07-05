@@ -3,16 +3,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // 🌟 引入了新的图标 Camera, Users, Sprout
-import { MessageCircleHeart, ChevronLeft, ChevronRight, BookOpen, ScrollText, Coffee, FileText, Sparkles, Award, Shield, X, Grid, LockKeyhole, Camera, Users, Sprout } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, ScrollText, Coffee, FileText, Sparkles, Award, Shield, X, Grid, LockKeyhole, Camera, Sprout } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-// 🌟 引入定制的无干扰留言板组件与站点配置
-import LabComments from '../../components/LabComments';
 import { siteConfig } from '../../siteConfig';
 
-// 🌟 引入相册与友链数据以统计徽章 (请确保路径正确，如果报错请调整 ../ 的数量)
+// 🌟 引入相册数据以统计徽章
 import { albums } from '../../data/albums';
-import { friendsData } from '../../data/friends';
 
 function seededRandom(seed: number) {
   const x = Math.sin(seed) * 10000;
@@ -76,7 +73,7 @@ const MagicTooltip = ({ title, type, content, author, color }: any) => (
 
       {type === 'wish' ? (
         <>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style={{ color }}>— 访客留言 —</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style={{ color }}>— 记录片段 —</p>
           <p className="text-sm text-[#e8e4d9] font-serif italic text-center leading-relaxed">「 {content} 」</p>
           <p className="text-[10px] text-[#8b6b4a] mt-3 text-right w-full">— {author}</p>
         </>
@@ -189,14 +186,14 @@ export default function AlchemyLab({ posts = [], chatters = [], moments = [] }: 
   const [showCatalog, setShowCatalog] = useState(false);
 
   // =========================================================
-  // 🌟 终极 RPG 经验结算与全图鉴徽章生成系统 (兼容照片与友链)
+  // 🌟 终极 RPG 经验结算与全图鉴徽章生成系统
   // =========================================================
   const rpgStats = useMemo(() => {
     if (siteConfig?.enableLevelSystem !== true) return null;
 
-    // 统计照片与友链 (纯发徽章，不加经验)
+    // 统计照片 (纯发徽章，不加经验)
     const totalPhotos = (albums || []).reduce((acc: number, curr: any) => acc + (curr.photos?.length || 0), 0);
-    const totalFriends = (friendsData || []).length;
+    const totalFriends = 0;
 
     const parseDateStr = (dateVal: any) => {
       try {
@@ -319,18 +316,6 @@ export default function AlchemyLab({ posts = [], chatters = [], moments = [] }: 
       if (totalPhotos >= conf.num) ownedIds.add(id);
     });
 
-    // 5. 友链配置 (10~50个满，3个阶段)
-    const friendConfig = [
-      { num: 10, tier: 3, title: '初结羁绊' },
-      { num: 20, tier: 6, title: '高朋满座' },
-      { num: 50, tier: 10, title: '知己遍天下' }
-    ];
-    friendConfig.forEach(conf => {
-      const id = `friend-${conf.num}`;
-      allCatalogBadges.push({ id, title: conf.title, typeLabel: '羁绊结弦成就', condition: `成功结交 ${conf.num} 位友链`, icon: Users, colorTier: conf.tier, group: 'friend' });
-      if (totalFriends >= conf.num) ownedIds.add(id);
-    });
-
     const ownedBadges = allCatalogBadges.filter(b => ownedIds.has(b.id));
 
     return {
@@ -358,27 +343,7 @@ export default function AlchemyLab({ posts = [], chatters = [], moments = [] }: 
   const formattedMonth = `${year} 卷${cnMonths[parseInt(month)] || month}`;
 
   useEffect(() => {
-    if (!mounted) return;
-    let isMounted = true;
-    const fetchGitalkComments = async () => {
-      try {
-        const { owner, repo } = siteConfig.gitalkConfig;
-        const targetLabel = `workshop-${currentMonthStr}`;
-        const issueRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues?labels=${targetLabel}`);
-        const issues = await issueRes.json();
-        if (issues && issues.length > 0) {
-          const commentsRes = await fetch(issues[0].comments_url);
-          const comments = await commentsRes.json();
-          if (isMounted && Array.isArray(comments)) {
-            setRealWishes(comments.map((c: any) => ({ id: c.id.toString(), content: c.body, author: c.user.login, type: 'wish', date: currentMonthStr + '-01' })));
-            return;
-          }
-        }
-        if (isMounted) setRealWishes([]);
-      } catch (err) { if (isMounted) setRealWishes([]); }
-    };
-    fetchGitalkComments();
-    return () => { isMounted = false; };
+    if (mounted) setRealWishes([]);
   }, [currentMonthStr, mounted]);
 
   const { shelvesData, stickyNotes, stats } = useMemo(() => {
@@ -533,7 +498,7 @@ export default function AlchemyLab({ posts = [], chatters = [], moments = [] }: 
           </div>
 
           {/* ========================================== */}
-          {/* 🌟 全图鉴 Modal 面板 (含照片与友链扩展区) */}
+          {/* 🌟 全图鉴 Modal 面板 */}
           {/* ========================================== */}
           <AnimatePresence>
             {showCatalog && (
@@ -606,18 +571,6 @@ export default function AlchemyLab({ posts = [], chatters = [], moments = [] }: 
                       ))}
                     </div>
 
-                    {/* 🌟 新增：羁绊结弦徽章区 */}
-                    <div className="flex items-center gap-4 mt-16 mb-8">
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8b6b4a]/50 to-transparent" />
-                      <span className="text-[#8b6b4a] text-xs font-black tracking-widest uppercase flex items-center gap-2"><Users size={14} /> 羁绊结弦徽章 (满破 50人)</span>
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8b6b4a]/50 to-transparent" />
-                    </div>
-                    <div className="flex flex-wrap gap-x-6 gap-y-10 justify-center">
-                      {rpgStats.allCatalogBadges.filter(b => b.group === 'friend').map(b => (
-                        <HexBadge key={b.id} badge={b} locked={!rpgStats.ownedIds.has(b.id)} />
-                      ))}
-                    </div>
-
                   </div>
                 </motion.div>
               </div>
@@ -644,11 +597,6 @@ export default function AlchemyLab({ posts = [], chatters = [], moments = [] }: 
               <div className="flex flex-col items-center justify-center w-12">
                 <div className="flex items-center gap-1.5"><Coffee size={14} className="text-[#10b981]"/><span className="text-xl font-bold text-[#e8e4d9] font-serif">{stats.moment}</span></div>
                 <span className="text-[10px] text-[#8b6b4a] tracking-widest mt-1">瞬间思绪</span>
-              </div>
-              <div className="w-px h-8 bg-[#8b6b4a]/40" />
-              <div className="flex flex-col items-center justify-center w-12">
-                <div className="flex items-center gap-1.5"><MessageCircleHeart size={14} className="text-[#ec4899]"/><span className="text-xl font-bold text-[#e8e4d9] font-serif">{stats.wish}</span></div>
-                <span className="text-[10px] text-[#8b6b4a] tracking-widest mt-1">祈愿留言</span>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -684,14 +632,6 @@ export default function AlchemyLab({ posts = [], chatters = [], moments = [] }: 
             ))}
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      {/* 留言区域 */}
-      <div className="w-full max-w-4xl mx-auto mt-10 mb-16 px-4">
-         <h2 className="text-xl font-black text-[#8b6b4a] mb-2 font-serif text-center uppercase tracking-widest border-b border-[#8b6b4a]/30 pb-4">
-            「 {formattedMonth} 的访客留言簿 」
-         </h2>
-         <LabComments key={`gitalk-${currentMonthStr}`} pageId={`workshop-${currentMonthStr}`} />
       </div>
 
     </motion.div>

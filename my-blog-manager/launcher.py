@@ -125,11 +125,11 @@ if __name__ == "__main__":
         print("🚀 [生产模式] 使用 127.0.0.1 强制同步...")
         env_vars["HOSTNAME"] = "127.0.0.1"
         frontend_process = subprocess.Popen(["node", "server.js"], cwd=standalone_dir, env=env_vars, shell=True)
-        window_url = f"http://127.0.0.1:{frontend_port}"
+        window_url = f"http://127.0.0.1:{frontend_port}/admin"
     else:
         print("🛠️ [开发模式] 使用 localhost 保持兼容...")
         frontend_process = subprocess.Popen("npm run dev", shell=True, cwd=BASE_DIR, env=env_vars)
-        window_url = f"http://localhost:{frontend_port}"
+        window_url = f"http://localhost:{frontend_port}/admin"
 
     write_port_config(backend_port)
     threading.Thread(target=run_api, args=(backend_port,), daemon=True).start()
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     api = WindowAPI()
     window = webview.create_window(
-        title='星辉云端·控制台',
+        title='CPZD Admin',
         url=window_url,
         width=1440, height=900, min_size=(1024, 768),
         background_color='#0f172a', resizable=True, frameless=True, easy_drag=False, js_api=api

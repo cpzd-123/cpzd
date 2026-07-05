@@ -27,6 +27,7 @@ export const siteConfig = {
 // 修改这里：变成图片数组
   bgImages: [cpzdPlaceholderImage],
   desktopLightBg: "/assets/images/desktop-light-bg.jpg",
+  desktopDarkBg: "/assets/images/desktop-dark-bg.png",
   mobileLightBg: "/assets/images/mobile-light-bg.png",
   mobileDarkBg: "/assets/images/mobile-dark-bg.png",
 
@@ -46,7 +47,7 @@ export const siteConfig = {
     gitee: "",
     google: "",
     email: "",
-    qq: "",
+    qq: "tencent://message/?uin=2720168105&Site=CPZD&Menu=yes",
     wechat: "",
   },
   counts: {

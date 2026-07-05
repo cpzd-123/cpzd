@@ -39,6 +39,18 @@
   .group:hover img {
     will-change: transform;
   }
+
+  .desktop-background-softener {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  @media (min-width: 768px) {
+    .desktop-background-softener {
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+  }
 }
 
 /* 3. 音乐播放器进度条样式 */

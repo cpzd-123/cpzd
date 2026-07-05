@@ -22,7 +22,7 @@ export default function LatestPostsCarousel({ posts }: { posts: any[] }) {
   const currentPost = posts[currentIndex];
 
   return (
-    <div className="md:col-span-4 rounded-3xl bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-xl overflow-hidden relative group min-h-[420px] h-full flex flex-col">
+    <div className="md:col-span-4 rounded-3xl bg-white/40 md:bg-white/[0.28] dark:bg-slate-800/50 md:dark:bg-slate-800/40 backdrop-blur-md md:backdrop-blur-[10px] border border-white/40 dark:border-white/10 shadow-xl overflow-hidden relative group min-h-[420px] h-full flex flex-col">
 
       {/* 整个卡片的点击跳转区域 */}
       <Link href={currentPost.slug === 'none' ? '#' : `/posts/${currentPost.slug}`} className="absolute inset-0 z-20" aria-label={`阅读 ${currentPost.title}`} />

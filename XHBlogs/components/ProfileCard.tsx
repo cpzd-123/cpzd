@@ -16,7 +16,7 @@ export default function ProfileCard({ postCount, chatterCount, photoCount }: { p
   return (
     <div
       onClick={() => router.push('/about')}
-      className="md:col-span-7 rounded-3xl bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-xl p-5 sm:p-6 md:p-8 flex flex-col justify-between transition-all duration-700 hover:scale-[1.01] cursor-pointer group relative overflow-hidden h-full min-h-[220px] md:min-h-[280px]"
+      className="md:col-span-7 rounded-3xl bg-white/40 md:bg-white/[0.28] dark:bg-slate-800/50 md:dark:bg-slate-800/40 backdrop-blur-md md:backdrop-blur-[10px] border border-white/40 dark:border-white/10 shadow-xl p-5 sm:p-6 md:p-8 flex flex-col justify-between transition-all duration-700 hover:scale-[1.01] cursor-pointer group relative overflow-hidden h-full min-h-[220px] md:min-h-[280px]"
     >
       <div className="flex items-start justify-between relative z-10">
         <div className="flex items-center gap-4 md:gap-6 w-full">
@@ -52,7 +52,7 @@ export default function ProfileCard({ postCount, chatterCount, photoCount }: { p
           <SocialBtn type="gitee" url={siteConfig.social?.gitee} />
           <SocialBtn type="google" url={siteConfig.social?.google} />
           <SocialBtn type="email" onClick={() => copyToClipboard(siteConfig.social?.email || '', '邮箱')} />
-          <SocialBtn type="qq" onClick={() => copyToClipboard(siteConfig.social?.qq || '', 'QQ号')} />
+          <SocialBtn type="qq" url={siteConfig.social?.qq} onClick={!siteConfig.social?.qq ? () => copyToClipboard('2720168105', 'QQ') : undefined} />
           <SocialBtn type="wechat" onClick={() => copyToClipboard(siteConfig.social?.wechat || '', '微信号')} />
         </div>
       </div>

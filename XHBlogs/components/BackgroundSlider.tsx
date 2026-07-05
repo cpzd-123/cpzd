@@ -63,6 +63,16 @@ export default function BackgroundSlider() {
           }}
         />
       )}
+      {siteConfig.desktopDarkBg && (
+        <div
+          className="hidden md:dark:block absolute inset-0 transition-opacity duration-[2000ms] ease-in-out transform-gpu"
+          style={{
+            backgroundImage: `url(${siteConfig.desktopDarkBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+      )}
     </div>
   );
 }

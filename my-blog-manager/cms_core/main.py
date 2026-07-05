@@ -4,9 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 # 引入所有 API 路由
 from cms_core.api import music, config, picbed, drafts, moments
 from cms_core.api import gallery, friends, projects
-from cms_core.api import sync, deploy
+from cms_core.api import sync, deploy, cpzd_admin
 
-app = FastAPI(title="XingHuiSama CMS Backend", version="1.0.0")
+app = FastAPI(title="CPZD Admin Backend", version="1.0.0")
 
 # 🌟 核心修复：添加跨域中间件，彻底解决 Failed to fetch 报错
 app.add_middleware(
@@ -19,7 +19,7 @@ app.add_middleware(
 
 @app.get("/api/status")
 def get_status():
-    return {"status": "online", "message": "中枢神经已连接"}
+    return {"status": "online", "message": "CPZD Admin backend online"}
 
 # 注册所有路由
 app.include_router(music.router, prefix="/api/music", tags=["Music"])
@@ -32,3 +32,4 @@ app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
 app.include_router(moments.router, prefix="/api/moments", tags=["Moments"])
 app.include_router(sync.router, prefix="/api/sync", tags=["Sync"])
 app.include_router(deploy.router, prefix="/api/deploy", tags=["Deploy"])
+app.include_router(cpzd_admin.router, prefix="/api/cpzd", tags=["CPZD Admin"])

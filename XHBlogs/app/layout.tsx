@@ -59,10 +59,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <div id="app-mount-root" className="flex-1 flex flex-col transition-opacity duration-1000">
               <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden">
                 {!siteConfig.useGradient && <BackgroundSlider />}
-                <div className="absolute inset-0 z-[-9] bg-white/30 dark:bg-slate-900/40 backdrop-blur-md transition-colors duration-1000"></div>
+                <div className="desktop-background-softener absolute inset-0 z-[-9] bg-white/20 md:bg-white/[0.14] dark:bg-slate-900/35 md:dark:bg-slate-900/25 transition-colors duration-1000"></div>
 
                 <div
-                  className="absolute inset-0 z-[-8] opacity-60 dark:opacity-20 mix-blend-color transition-opacity duration-1000 transform-gpu"
+                  className="absolute inset-0 z-[-8] opacity-45 md:opacity-30 dark:opacity-20 md:dark:opacity-15 mix-blend-color transition-opacity duration-1000 transform-gpu"
                   style={{
                     background: `linear-gradient(-45deg, ${siteConfig.themeColors.join(', ')})`,
                     backgroundSize: '400% 400%',
@@ -71,8 +71,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 ></div>
 
                 {/* 👇 🌟 优化：手机端去掉了 mix-blend-overlay，但保留了 blur 模糊光晕，确保视觉不打折 */}
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white/40 dark:bg-indigo-900/20 blur-[100px] rounded-full z-[-7] md:mix-blend-overlay"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-400/30 dark:bg-purple-900/30 blur-[100px] rounded-full z-[-7] md:mix-blend-overlay"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white/30 md:bg-white/[0.18] dark:bg-indigo-900/20 md:dark:bg-indigo-900/[0.15] blur-[90px] md:blur-[70px] rounded-full z-[-7] md:mix-blend-overlay"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-400/25 md:bg-indigo-400/[0.18] dark:bg-purple-900/30 md:dark:bg-purple-900/[0.20] blur-[90px] md:blur-[70px] rounded-full z-[-7] md:mix-blend-overlay"></div>
 
                 {/* 隐藏手机端高负载粒子特效 */}
                 <div className="hidden md:block absolute inset-0 w-full h-full">

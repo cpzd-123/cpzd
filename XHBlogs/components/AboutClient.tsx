@@ -348,7 +348,7 @@ export default function AboutClient({
                 })}
 
                 {activities.length === 0 && (
-                  <div className="text-slate-500 text-sm font-bold">源石数据库中暂无活动记录...</div>
+                  <div className="text-slate-500 text-sm font-bold">暂时还没有活动记录...</div>
                 )}
               </div>
 

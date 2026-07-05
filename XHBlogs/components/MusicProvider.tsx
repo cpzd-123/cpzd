@@ -70,7 +70,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [lyrics, setLyrics] = useState<{ time: number; text: string }[]>([]);
-  const [currentLyric, setCurrentLyric] = useState("正在连接高可用神经云端...");
+  const [currentLyric, setCurrentLyric] = useState("音乐歌单将在联网或部署后加载。");
   const [isLoading, setIsLoading] = useState(true);
 
   // 🌟 2. 新增音量和播放模式状态
@@ -93,7 +93,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
             id: song.id || Math.random().toString(),
             title: song.name || '未知歌曲',
             artist: song.artist || song.author || '未知歌手',
-            cover: song.cover || song.pic || 'https://bu.dusays.com/2026/03/24/69c24230a5ff8.jpg',
+            cover: song.cover || song.pic || siteConfig.photoWallImage,
             src: song.url,
             lrcUrl: null,
             lyrics: song.lrc ? parseLrc(song.lrc) : []
@@ -101,11 +101,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
         if (isMounted) {
           if (mergedPlaylist.length > 0) setPlaylist(mergedPlaylist);
-          else setCurrentLyric("云端链路受阻");
+          else setCurrentLyric("音乐歌单加载失败，请检查网络或接口配置。");
           setIsLoading(false);
         }
       } catch (error) {
-        if (isMounted) { setCurrentLyric("网络初始化失败"); setIsLoading(false); }
+        if (isMounted) { setCurrentLyric("音乐歌单加载失败，请检查网络或接口配置。"); setIsLoading(false); }
       }
     };
 

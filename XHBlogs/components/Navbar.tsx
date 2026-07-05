@@ -71,10 +71,10 @@ export default function Navbar() {
   const navLinks = [
     { name: '首页', href: '/' },
     { name: '项目', href: '/projects' },
+    { name: '博客', href: 'https://blog.cpzd.top', external: true },
     { name: '归档', href: '/timeline' },
     { name: '照片墙', href: '/photowall' },
     { name: '音乐', href: '/music' },
-    { name: '灵境', href: '/tree' },
     { name: '说说', href: '/moments' },
     { name: '杂谈', href: '/chatter' },
     { name: '友链', href: '/friends' },
@@ -97,9 +97,9 @@ export default function Navbar() {
           <nav className="flex gap-8 text-sm font-bold">
             {/* PC端依然使用全量的 navLinks */}
             {navLinks.map((link) => {
-              const isActive = pathname === link.href || pathname === `${link.href}/`;
+              const isActive = !link.external && (pathname === link.href || pathname === `${link.href}/`);
               return (
-                <Link key={link.href} href={link.href} className={`relative py-1 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200 hover:text-indigo-600'}`}>
+                <Link key={link.href} href={link.href} target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined} className={`relative py-1 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200 hover:text-indigo-600'}`}>
                   {link.name}
                   {isActive && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></span>}
                 </Link>
@@ -164,7 +164,7 @@ export default function Navbar() {
 
                   {/* 🌟 手机端轮盘渲染：使用过滤后的 mobileNavLinks */}
                   {mobileNavLinks.map((link, index) => {
-                    const isActive = pathname === link.href || pathname === `${link.href}/`;
+                    const isActive = !link.external && (pathname === link.href || pathname === `${link.href}/`);
                     // 🌟 角度计算也会基于过滤后的长度，保证图标自动均匀排布！
                     const angle = index * (360 / mobileNavLinks.length);
 
@@ -179,6 +179,8 @@ export default function Navbar() {
                         <motion.div style={{ rotate: inverseRotation }} className="w-full h-full">
                           <Link
                             href={link.href}
+                            target={link.external ? '_blank' : undefined}
+                            rel={link.external ? 'noopener noreferrer' : undefined}
                             onClick={() => setIsMobileMenuOpen(false)}
                             className={`flex items-center justify-center w-full h-full rounded-full transition-all duration-300 ${
                               isActive 

@@ -43,7 +43,7 @@ export default function ChatterBoard({ chatters }: { chatters: Chatter[] }) {
       <div className="mb-8 md:mb-14 text-center">
         {/* 🌟 核心修改：标题字号响应式 */}
         <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-2 md:mb-4 tracking-tighter">
-          {siteConfig.chatterTitle || "源石研究笔记"}
+          {siteConfig.chatterTitle || "CPZD Notes"}
         </h1>
         <p className="text-xs md:text-base text-slate-500 dark:text-slate-400 font-medium italic opacity-80">
           “ {siteConfig.chatterDescription || "日常碎片与灵感记录"} ”

@@ -5,11 +5,17 @@ import matter from 'gray-matter';
 // 引入前台客户端组件
 import CreativeWorkshopClient from './CreativeWorkshopClient';
 
+const contentDirs: Record<string, string> = {
+  posts: path.join(/* turbopackIgnore: true */ process.cwd(), 'posts'),
+  chatters: path.join(/* turbopackIgnore: true */ process.cwd(), 'chatters'),
+  moments: path.join(/* turbopackIgnore: true */ process.cwd(), 'moments'),
+};
+
 function getLocalItems(directoryName: string, typeName: string) {
-  const dirPath = path.join(process.cwd(), directoryName);
+  const dirPath = contentDirs[directoryName];
   let items: any[] = [];
   try {
-    if (fs.existsSync(dirPath)) {
+    if (dirPath && fs.existsSync(dirPath)) {
       const fileNames = fs.readdirSync(dirPath).filter(f => f.endsWith('.md'));
       items = fileNames.map(fileName => {
         const fullPath = path.join(dirPath, fileName);

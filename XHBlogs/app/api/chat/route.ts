@@ -12,9 +12,14 @@ export async function POST(req: Request) {
     // 🌟 纯粹靠环境变量读取 API Key
     const apiKey = (process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || '').trim();
 
-    if (!apiKey) {
-      console.error("❌ 找不到 API Key");
-      return new Response(JSON.stringify({ error: "Key missing" }), { status: 500 });
+    if (!siteConfig.geminiConfig.enabled || !apiKey) {
+      return new Response(JSON.stringify({
+        reply: "AI 助手暂未配置 API Key，功能暂不可用。",
+        disabled: true
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // 调用 siteConfig 的参数
@@ -47,9 +52,13 @@ export async function POST(req: Request) {
     if (!response.ok) {
       console.error("🚨 Gemini 3 拒绝了请求:", JSON.stringify(data));
       return new Response(JSON.stringify({
+        reply: "AI 助手暂时无法连接，请稍后再试。",
         error: `模型拒绝访问: ${response.status}`,
         details: data.error?.message || "未知错误"
-      }), { status: response.status });
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     console.log("✅ [3/5] Google 成功响应");
@@ -63,7 +72,13 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("🔥 [5/5] 运行时崩溃:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({
+      reply: "AI 助手暂时无法连接，请稍后再试。",
+      error: error.message
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 

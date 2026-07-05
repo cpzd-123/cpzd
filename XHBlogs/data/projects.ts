@@ -11,14 +11,25 @@ export type Project = {
 
 export const projectsData: Project[] = [
   {
-    "id": "proj_1775049332705",
-    "name": "Computational Chemistry Tool",
-    "githubUrl": "https://github.com/heiehiehi/Computational_Chemistry_Tool",
-    "description": "该工具本作者使用在Win下的WSL2平台，系统为Ubuntu22，个人使用请依据自己数据进行修改（这些工具只是整合了一些流程）",
-    "icon": "🚀",
+    "id": "personal-homepage",
+    "name": "Personal Homepage",
+    "githubUrl": "https://cpzd.top",
+    "description": "A personal homepage built with Next.js and glassmorphism style.",
+    "icon": "✨",
     "tags": [
-      "Gromacs",
-      "RMSF"
+      "Next.js",
+      "Homepage"
+    ]
+  },
+  {
+    "id": "hexo-blog",
+    "name": "Hexo Blog",
+    "githubUrl": "https://blog.cpzd.top",
+    "description": "My personal blog for development notes, study records and life sharing.",
+    "icon": "📝",
+    "tags": [
+      "Hexo",
+      "Blog"
     ]
   },
 ];

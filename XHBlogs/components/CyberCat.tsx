@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { siteConfig } from '../siteConfig';
 
 export default function CyberCat() {
   const [isPetted, setIsPetted] = useState(false);
@@ -11,6 +12,7 @@ export default function CyberCat() {
   const [isThinking, setIsThinking] = useState(false);
 
   const chatTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const aiDisabledMessage = "AI 助手暂未配置 API Key，功能暂不可用。";
 
   // --- 💬 说话功能 ---
   const speak = (text: string, duration = 6000) => {
@@ -35,6 +37,12 @@ export default function CyberCat() {
   const handleFeed = async (e: React.MouseEvent) => {
     e.stopPropagation(); // 阻止触发摸猫或拖拽
     if (isThinking) return;
+
+    if (!siteConfig.geminiConfig.enabled) {
+      setShowInput(false);
+      speak(aiDisabledMessage, 5000);
+      return;
+    }
 
     setShowInput(false); // 喂食时关掉输入框
     setIsThinking(true);
@@ -62,6 +70,13 @@ export default function CyberCat() {
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isThinking) return;
+
+    if (!siteConfig.geminiConfig.enabled) {
+      setInputValue('');
+      setShowInput(false);
+      speak(aiDisabledMessage, 5000);
+      return;
+    }
 
     const userMessage = inputValue;
     setInputValue('');

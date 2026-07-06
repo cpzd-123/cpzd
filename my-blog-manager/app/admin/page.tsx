@@ -868,7 +868,6 @@ export default function AdminDashboard() {
                       <Field label="友链 ID，可留空自动生成" value={friendForm.id} onChange={(value) => setFriendForm({ ...friendForm, id: value })} />
                       <Field label="名称" value={friendForm.name} onChange={(value) => setFriendForm({ ...friendForm, name: value })} />
                       <Field label="链接" value={friendForm.url} onChange={(value) => setFriendForm({ ...friendForm, url: value })} />
-                      <Field label="头像路径" value={friendForm.avatar} onChange={(value) => setFriendForm({ ...friendForm, avatar: value })} />
                       <Field label="主题色" value={friendForm.themeColor} onChange={(value) => setFriendForm({ ...friendForm, themeColor: value })} />
                       <label className="block">
                         <span className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-500">简介</span>

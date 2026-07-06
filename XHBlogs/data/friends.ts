@@ -11,6 +11,14 @@ export interface Friend {
 
 export const friendsData: Friend[] = [
   {
+    "id": "initsnow",
+    "name": "initsnow",
+    "url": "blog.initsnow.top",
+    "description": "",
+    "avatar": "",
+    "themeColor": "#6366f1"
+  },
+  {
     "id": "qq",
     "name": "QQ",
     "url": "tencent://message/?uin=2720168105&Site=CPZD&Menu=yes",

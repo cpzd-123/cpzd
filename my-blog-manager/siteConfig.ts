@@ -30,7 +30,7 @@ export const siteConfig = {
   // 5. 首页照片墙预览图
   photoWallImage: "/assets/images/desktop-light-bg.jpg",
   enableMusicPlayer: true,
-  enableCyberCat: false,
+  enableCyberCat: true,
   enableChatter: true,
   enableGallery: true,
   enableFriends: true,

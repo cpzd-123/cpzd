@@ -9,6 +9,7 @@ import { siteConfig } from "../siteConfig";
 import ClickEffect from "../components/ClickEffect";
 import BackgroundSlider from "../components/BackgroundSlider";
 import GlobalToolbox from "../components/GlobalToolbox";
+import CyberCat from "../components/CyberCat";
 import SplashScreen from "../components/SplashScreen";
 import { OperationProvider } from "../context/OperationContext";
 import { ToastProvider } from '../components/ToastProvider';
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
                   {siteConfig.enableMusicPlayer && <FloatingPlayer />}
                   <GlobalToolbox />
+                  {siteConfig.enableCyberCat && <CyberCat />}
                   <ClickEffect />
                 </div>
 

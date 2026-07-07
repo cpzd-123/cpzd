@@ -72,11 +72,10 @@ export default function Navbar() {
     { name: '首页', href: '/' },
     { name: '项目', href: '/projects' },
     { name: '博客', href: siteConfig.blogUrl || 'https://blog.cpzd.top', external: true },
-    { name: '友链', href: '/friends' },
+    ...(siteConfig.enableFriends !== false ? [{ name: '友链', href: '/friends' }] : []),
     { name: '归档', href: '/timeline' },
-    { name: '照片墙', href: '/photowall' },
-    { name: '说说', href: '/moments' },
-    { name: '杂谈', href: '/chatter' },
+    ...(siteConfig.enableGallery !== false ? [{ name: '照片墙', href: '/photowall' }] : []),
+    ...(siteConfig.enableChatter !== false ? [{ name: '说说', href: '/moments' }, { name: '杂谈', href: '/chatter' }] : []),
     { name: '关于', href: '/about' },
   ];
 

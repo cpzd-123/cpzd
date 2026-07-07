@@ -196,6 +196,32 @@ class PluginsPayload(BaseModel):
     plugins: dict[str, bool]
 
 
+PLUGIN_CONFIG_KEYS = {
+    "musicPlayer": "enableMusicPlayer",
+    "cyberCat": "enableCyberCat",
+    "chatter": "enableChatter",
+    "gallery": "enableGallery",
+    "friends": "enableFriends",
+    "search": "enableSearch",
+}
+
+PLUGIN_DEFAULTS = {
+    "musicPlayer": False,
+    "cyberCat": False,
+    "chatter": True,
+    "gallery": True,
+    "friends": True,
+    "search": True,
+}
+
+
+def read_plugin_config(content: str) -> dict[str, bool]:
+    return {
+        plugin: read_site_config_bool(content, config_key, PLUGIN_DEFAULTS[plugin])
+        for plugin, config_key in PLUGIN_CONFIG_KEYS.items()
+    }
+
+
 def read_site_config_value(content: str, key: str, default: str = "") -> str:
     match = re.search(rf'({key}:\s*")[^"]*(")', content)
     if not match:
@@ -230,6 +256,15 @@ def set_site_config_bool(content: str, key: str, value: bool) -> str:
     pattern = rf'({key}:\s*)(true|false)'
     if re.search(pattern, content):
         return re.sub(pattern, lambda match: f"{match.group(1)}{bool_text}", content, count=1)
+
+    if re.search(r'enableMusicPlayer:\s*(true|false),', content):
+        return re.sub(
+            r'(enableMusicPlayer:\s*(?:true|false),)',
+            lambda match: f"{match.group(1)}\n  {key}: {bool_text},",
+            content,
+            count=1,
+        )
+
     if key == "enableMusicPlayer":
         return re.sub(
             r'(blogUrl:\s*"[^"]*",)',
@@ -237,6 +272,7 @@ def set_site_config_bool(content: str, key: str, value: bool) -> str:
             content,
             count=1,
         )
+
     return content
 
 
@@ -265,14 +301,7 @@ async def overview():
             "assets": len([p for p in assets_dir.iterdir() if p.is_file()]) if assets_dir.exists() else 0,
             "projectsFile": projects_file.exists(),
         },
-        "plugins": {
-            "musicPlayer": read_site_config_bool(config_text, "enableMusicPlayer", False),
-            "cyberCat": False,
-            "chatter": True,
-            "gallery": True,
-            "friends": True,
-            "search": True,
-        },
+        "plugins": read_plugin_config(config_text),
     }
 
 
@@ -556,17 +585,25 @@ async def save_plugins(payload: PluginsPayload):
     if not config_path.exists():
         raise HTTPException(status_code=404, detail="siteConfig.ts not found")
 
-    content = config_path.read_text(encoding="utf-8")
-    if "musicPlayer" in payload.plugins:
-        content = set_site_config_bool(content, "enableMusicPlayer", bool(payload.plugins["musicPlayer"]))
-    config_path.write_text(content, encoding="utf-8")
+    saved_content = ""
+    config_targets = [config_path, MANAGER_ROOT / "siteConfig.ts"]
+    for target_path in config_targets:
+        if not target_path.exists():
+            continue
+        content = target_path.read_text(encoding="utf-8")
+        for plugin, config_key in PLUGIN_CONFIG_KEYS.items():
+            if plugin in payload.plugins:
+                content = set_site_config_bool(content, config_key, bool(payload.plugins[plugin]))
+        target_path.write_text(content, encoding="utf-8")
+        if target_path == config_path:
+            saved_content = content
+
+    saved_plugins = read_plugin_config(saved_content)
 
     return {
         "success": True,
-        "message": "插件开关已保存。音乐播放器默认保持关闭。" if not payload.plugins.get("musicPlayer", False) else "插件开关已保存。音乐播放器已开启。",
-        "plugins": {
-            "musicPlayer": read_site_config_bool(content, "enableMusicPlayer", False),
-        },
+        "message": "插件开关已保存。",
+        "plugins": saved_plugins,
     }
 
 

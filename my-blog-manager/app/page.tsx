@@ -88,6 +88,11 @@ export default function Home() {
   const realPhotoCount = albums.reduce((total, album) => total + album.photos.length, 0);
   const latestAlbum = albums.length > 0 ? albums[0] : { id: '', title: '照片墙', description: '查看摄影', cover: siteConfig.photoWallImage, date: '' };
   const musicEnabled = siteConfig.enableMusicPlayer === true;
+  const searchEnabled = siteConfig.enableSearch !== false;
+  const galleryEnabled = siteConfig.enableGallery !== false;
+  const chatterEnabled = siteConfig.enableChatter !== false;
+  const visibleChatterCount = chatterEnabled ? chatterCount : 0;
+  const visiblePhotoCount = galleryEnabled ? realPhotoCount : 0;
 
   return (
     <ToastProvider>
@@ -95,13 +100,13 @@ export default function Home() {
         <Navbar />
         <PageTransition>
           <div className="w-full max-w-6xl mx-auto mt-28 px-4 sm:px-10 relative z-10">
-            <SearchBar posts={allPosts} />
+            {searchEnabled && <SearchBar posts={allPosts} />}
 
             <main className="flex flex-col gap-6 w-full">
               {/* 第一行：个人信息 + 播放器 */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 w-full items-stretch">
                 <div className={`${musicEnabled ? "md:col-span-7" : "md:col-span-12"} flex`}>
-                    <ProfileCard postCount={allPosts.length} chatterCount={chatterCount} photoCount={realPhotoCount}/>
+                    <ProfileCard postCount={allPosts.length} chatterCount={visibleChatterCount} photoCount={visiblePhotoCount}/>
                 </div>
 
                 {musicEnabled && <div className="md:col-span-5 flex">
@@ -116,19 +121,19 @@ export default function Home() {
                   <LatestPostsCarousel posts={top5Posts} />
                 </div>
                 <div className="md:col-span-8 flex flex-col gap-6 h-full">
-                  <Link href="/photowall" className="flex-1 rounded-3xl bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-xl overflow-hidden transition-all duration-700 hover:scale-[1.02] relative group min-h-[220px]">
+                  {galleryEnabled && <Link href="/photowall" className="flex-1 rounded-3xl bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-xl overflow-hidden transition-all duration-700 hover:scale-[1.02] relative group min-h-[220px]">
                     <img src={latestAlbum.cover} className="w-full h-full absolute inset-0 object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"/>
                     <div className="absolute inset-0 bg-black/20 dark:bg-black/50 group-hover:bg-transparent transition-colors duration-500"></div>
                     <div className="absolute bottom-6 left-6 right-6">
                       <h3 className="text-3xl font-bold text-white mb-2 underline decoration-pink-400">{latestAlbum.title}</h3>
                       <p className="text-white/90 text-lg line-clamp-1">{latestAlbum.description}</p>
                     </div>
-                  </Link>
+                  </Link>}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 min-h-[220px] items-stretch">
-                    <div className="md:col-span-8 h-full">
+                    {chatterEnabled && <div className="md:col-span-8 h-full">
                       <LatestChatterCarousel chatters={top5Chatters} />
-                    </div>
-                    <div className="md:col-span-4 h-full flex">
+                    </div>}
+                    <div className={`${chatterEnabled ? "md:col-span-4" : "md:col-span-12"} h-full flex`}>
                       <ThemeToggleBlock />
                     </div>
                   </div>

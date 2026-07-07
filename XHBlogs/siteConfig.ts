@@ -11,6 +11,11 @@ export const siteConfig = {
   bio: "记录开发、学习、生活与分享。",
   blogUrl: "https://blog.cpzd.top",
   enableMusicPlayer: true,
+  enableCyberCat: false,
+  enableChatter: true,
+  enableGallery: true,
+  enableFriends: true,
+  enableSearch: true,
 
   navTitle: "CPZD",
 

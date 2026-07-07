@@ -958,19 +958,15 @@ export default function AdminDashboard() {
                       <div className="text-xs font-black tracking-[0.18em] text-slate-500">{pluginLabels[name] || name}</div>
                       <div className="mt-4 flex items-center justify-between gap-4">
                         <div className="text-lg font-black text-slate-900 dark:text-white">{enabled ? "开启" : "关闭"}</div>
-                        {name === "musicPlayer" ? (
-                          <button
-                            onClick={() => savePlugin(name, !enabled)}
-                            disabled={isBusy}
-                            className={`flex min-w-28 items-center justify-between rounded-xl px-3 py-2 text-xs font-black text-white shadow-lg transition disabled:opacity-60 ${enabled ? "bg-indigo-500 shadow-indigo-500/25" : "bg-slate-500 shadow-slate-500/20"}`}
-                            aria-label="切换音乐播放器"
-                          >
-                            <span>{enabled ? "点击关闭" : "点击开启"}</span>
-                            <span className={`ml-2 h-4 w-4 rounded-full border-2 border-white ${enabled ? "bg-white" : "bg-transparent"}`} />
-                          </button>
-                        ) : (
-                          <span className="rounded-lg bg-slate-500/10 px-3 py-2 text-xs font-black text-slate-500">暂不可切换</span>
-                        )}
+                        <button
+                          onClick={() => savePlugin(name, !enabled)}
+                          disabled={isBusy}
+                          className={`flex min-w-28 items-center justify-between rounded-xl px-3 py-2 text-xs font-black text-white shadow-lg transition disabled:opacity-60 ${enabled ? "bg-indigo-500 shadow-indigo-500/25" : "bg-slate-500 shadow-slate-500/20"}`}
+                          aria-label={`切换${pluginLabels[name] || name}`}
+                        >
+                          <span>{enabled ? "点击关闭" : "点击开启"}</span>
+                          <span className={`ml-2 h-4 w-4 rounded-full border-2 border-white ${enabled ? "bg-white" : "bg-transparent"}`} />
+                        </button>
                       </div>
                     </div>
                   ))}

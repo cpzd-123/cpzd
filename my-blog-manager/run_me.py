@@ -1,36 +1,41 @@
 import os
-import sys
 import subprocess
+import sys
 
-def check_node_environment():
-    """检查前端环境：是否存在 node_modules，不存在则自动安装"""
-    print("🔍 正在检查前端依赖 (Node.js)...")
 
-    # 检查当前目录下是否有 node_modules 文件夹
-    if not os.path.exists("node_modules"):
-        print("📦 发现缺失前端依赖，正在尝试运行 npm install (请稍候，这可能需要几分钟)...")
-        try:
-            # shell=True 在 Windows 下运行 npm 必须加上
-            subprocess.check_call(["npm", "install"], shell=True)
-            print("✅ 前端依赖安装成功！")
-        except Exception as e:
-            print(f"❌ 前端安装失败！请确保你安装了 Node.js。错误: {e}")
-            return False
-    else:
-        print("✅ 前端依赖已就绪。")
-    return True
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def check_node_environment() -> bool:
+    print("正在检查 CPZD Admin 前端依赖...")
+    if os.path.exists(os.path.join(BASE_DIR, "node_modules")):
+        print("前端依赖已就绪。")
+        return True
+
+    print("未发现 node_modules，正在运行 npm install。")
+    print("如果网络较慢，这一步可能需要几分钟。")
+    try:
+        subprocess.check_call(["npm.cmd", "install"], cwd=BASE_DIR)
+        print("前端依赖安装成功。")
+        return True
+    except Exception as exc:
+        print("前端依赖安装失败，请确认已安装 Node.js，并检查网络。")
+        print(f"错误信息：{exc}")
+        return False
+
+
+def main() -> int:
+    os.chdir(BASE_DIR)
+    print("CPZD Admin · 本地控制台")
+    print("后台只绑定本机地址，不部署到公网。")
+
+    if not check_node_environment():
+        input("按回车键退出...")
+        return 1
+
+    print("环境检查完成，正在启动本地网页后台...")
+    return subprocess.call([sys.executable, "launcher_web.py"], cwd=BASE_DIR)
+
 
 if __name__ == "__main__":
-    # 强制切换到脚本所在目录
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-    print("🌟 --- CPZD Admin · 本地控制台 --- 🌟")
-
-    # 只检查 Node 依赖；Python 依赖由 Start.bat 预先检测，避免代理环境下自动 pip 安装失败。
-    if check_node_environment():
-        print("\n🚀 所有环境准备就绪，正在点火启动...")
-        # 启动浏览器网页管理模式，不再依赖 pywebview 桌面壳。
-        subprocess.call([sys.executable, "launcher_web.py"])
-    else:
-        print("\n⚠️ 环境检查未通过，请根据报错信息手动处理。")
-        input("按回车键退出...")
+    raise SystemExit(main())

@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from fastapi import APIRouter, Request
 
 router = APIRouter()
@@ -10,11 +11,25 @@ PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_API_DIR, "..", ".."))
 FRIENDS_TS_PATH = os.path.join(PROJECT_ROOT, "data", "friends.ts")
 
 
+def normalize_external_url(value):
+    url = str(value or "").strip()
+    if not url:
+        return ""
+    if re.match(r"^[a-z][a-z0-9+.-]*:", url, re.I):
+        return url
+    if url.startswith("//"):
+        return f"https:{url}"
+    return f"https://{url.lstrip('/')}"
+
+
 @router.post("/sync")
 async def sync_friends(request: Request):
     try:
         payload = await request.json()
-        friends_list = payload.get("friends", [])
+        friends_list = [
+            {**friend, "url": normalize_external_url(friend.get("url", ""))}
+            for friend in payload.get("friends", [])
+        ]
 
         # 1. 序列化
         json_str = json.dumps(friends_list, ensure_ascii=False, indent=2)

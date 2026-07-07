@@ -1,11 +1,42 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MusicSection({ formData, handleUpdate, pushToQueue, musicDetails, queryMusic, queryLoading, queryResult, confirmAddMusic, removeSong }: any) {
+  const saveMusicConfig = () => {
+    pushToQueue('音乐播放器开关', 'enableMusicPlayer', formData.enableMusicPlayer);
+    pushToQueue('网易云歌单 ID', 'cloudMusicPlaylistId', formData.cloudMusicPlaylistId || '');
+    pushToQueue('网易云单曲列表', 'cloudMusicIds', formData.cloudMusicIds);
+  };
+
   return (
     <motion.section initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/50 dark:border-slate-800/50 rounded-[40px] p-8 shadow-2xl">
       <h2 className="text-xl font-black text-slate-800 dark:text-white mb-8">🎵 歌单管理与查询</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <div className="space-y-3">
+          <div className="rounded-3xl bg-white/45 dark:bg-slate-800/45 border border-white/30 p-5 mb-6 space-y-4">
+            <label className="flex items-center justify-between gap-4">
+              <span className="text-sm font-black text-slate-700 dark:text-slate-200">启用音乐播放器</span>
+              <button
+                type="button"
+                onClick={() => handleUpdate('enableMusicPlayer', !formData.enableMusicPlayer)}
+                className={`h-8 w-16 rounded-full p-1 transition-colors ${formData.enableMusicPlayer ? 'bg-pink-500' : 'bg-slate-400'}`}
+                aria-label="切换音乐播放器"
+              >
+                <span className={`block h-6 w-6 rounded-full bg-white shadow transition-transform ${formData.enableMusicPlayer ? 'translate-x-8' : 'translate-x-0'}`} />
+              </button>
+            </label>
+
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase mb-2">网易云歌单 ID</p>
+              <input
+                type="text"
+                placeholder="例如 1234567890"
+                value={formData.cloudMusicPlaylistId || ''}
+                onChange={e => handleUpdate('cloudMusicPlaylistId', e.target.value.trim())}
+                className="w-full bg-white dark:bg-slate-900 border-none rounded-2xl px-4 py-3 text-sm outline-none shadow-sm"
+              />
+            </div>
+          </div>
+
           <p className="text-[10px] font-black text-slate-400 uppercase ml-1 mb-4">当前绑定的网易云 ID ({formData.cloudMusicIds.length})</p>
           <div className="max-h-[400px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
             {formData.cloudMusicIds.map((id: string, index: number) => {
@@ -63,7 +94,7 @@ export default function MusicSection({ formData, handleUpdate, pushToQueue, musi
 
           {/* 【核心修复】：加上了真正的更新 key (cloudMusicIds) 和新数组 */}
           <button
-            onClick={() => pushToQueue('网易云歌单', 'cloudMusicIds', formData.cloudMusicIds)}
+            onClick={saveMusicConfig}
             className="w-full py-4 bg-indigo-500 text-white rounded-2xl text-sm font-black shadow-xl mt-4 active:scale-95 transition-all"
           >
             暂存音乐修改

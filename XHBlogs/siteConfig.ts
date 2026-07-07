@@ -9,6 +9,8 @@ export const siteConfig = {
   faviconUrl: "/assets/images/avatar.png",
   authorName: "CPZD",
   bio: "记录开发、学习、生活与分享。",
+  blogUrl: "https://blog.cpzd.top",
+  enableMusicPlayer: true,
 
   navTitle: "CPZD",
 

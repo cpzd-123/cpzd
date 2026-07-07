@@ -71,7 +71,7 @@ export default function Navbar() {
   const navLinks = [
     { name: '首页', href: '/' },
     { name: '项目', href: '/projects' },
-    { name: '博客', href: 'https://blog.cpzd.top', external: true },
+    { name: '博客', href: siteConfig.blogUrl || 'https://blog.cpzd.top', external: true },
     { name: '友链', href: '/friends' },
     { name: '归档', href: '/timeline' },
     { name: '照片墙', href: '/photowall' },

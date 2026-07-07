@@ -85,7 +85,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     {children}
                   </div>
 
-                  <FloatingPlayer />
+                  {siteConfig.enableMusicPlayer && <FloatingPlayer />}
                   <GlobalToolbox />
                   <ClickEffect />
                 </div>

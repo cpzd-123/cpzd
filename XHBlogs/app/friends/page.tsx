@@ -7,6 +7,14 @@ export const metadata = {
   description: 'CPZD friends and contact links.',
 };
 
+function normalizeFriendUrl(url: string) {
+  const value = url.trim();
+  if (!value) return '#';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return value;
+  if (value.startsWith('//')) return `https:${value}`;
+  return `https://${value.replace(/^\/+/, '')}`;
+}
+
 export default function FriendsPage() {
   return (
     <div className="min-h-screen pb-16">
@@ -30,7 +38,7 @@ export default function FriendsPage() {
                 {friendsData.map((friend) => (
                   <a
                     key={friend.id}
-                    href={friend.url}
+                    href={normalizeFriendUrl(friend.url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group rounded-2xl bg-white/45 md:bg-white/[0.30] dark:bg-slate-900/40 border border-white/50 dark:border-white/10 shadow-lg p-5 flex items-center justify-between gap-4 transition-all duration-500 hover:-translate-y-1 hover:shadow-indigo-500/20"

@@ -33,6 +33,17 @@ def slugify(value: str) -> str:
     return value or f"post-{int(datetime.now().timestamp())}"
 
 
+def normalize_external_url(value: str | None) -> str:
+    url = (value or "").strip()
+    if not url:
+        return ""
+    if re.match(r"^[a-z][a-z0-9+.-]*:", url, re.I):
+        return url
+    if url.startswith("//"):
+        return f"https:{url}"
+    return f"https://{url.lstrip('/')}"
+
+
 def read_frontmatter(path: Path) -> tuple[dict[str, Any], str]:
     raw = path.read_text(encoding="utf-8")
     if raw.lstrip().startswith("---"):
@@ -85,7 +96,11 @@ def write_projects_file(projects: list[dict[str, Any]]) -> None:
 def write_friends_file(friends: list[dict[str, Any]]) -> None:
     friends_file = ensure_inside_site(SITE_ROOT / "data" / "friends.ts")
     friends_file.parent.mkdir(parents=True, exist_ok=True)
-    json_str = json.dumps(friends, ensure_ascii=False, indent=2)
+    normalized_friends = [
+        {**friend, "url": normalize_external_url(str(friend.get("url", "")))}
+        for friend in friends
+    ]
+    json_str = json.dumps(normalized_friends, ensure_ascii=False, indent=2)
     friends_file.write_text(
         "// 🛡️ 本文件由 CPZD Admin 自动生成\n\n"
         "export interface Friend {\n"
@@ -177,11 +192,61 @@ class ConfigPayload(BaseModel):
     blogUrl: str = "https://blog.cpzd.top"
 
 
+class PluginsPayload(BaseModel):
+    plugins: dict[str, bool]
+
+
+def read_site_config_value(content: str, key: str, default: str = "") -> str:
+    match = re.search(rf'({key}:\s*")[^"]*(")', content)
+    if not match:
+        return default
+    return content[match.start(0):match.end(0)].split('"', 2)[1]
+
+
+def set_site_config_value(content: str, key: str, value: str) -> str:
+    pattern = rf'({key}:\s*")[^"]*(")'
+    replacement = lambda match: f"{match.group(1)}{value}{match.group(2)}"
+    if re.search(pattern, content):
+        return re.sub(pattern, replacement, content, count=1)
+    if key == "blogUrl":
+        return re.sub(
+            r'(bio:\s*"[^"]*",)',
+            lambda match: f'{match.group(1)}\n  blogUrl: "{value}",',
+            content,
+            count=1,
+        )
+    return content
+
+
+def read_site_config_bool(content: str, key: str, default: bool = False) -> bool:
+    match = re.search(rf'{key}:\s*(true|false)', content)
+    if not match:
+        return default
+    return match.group(1) == "true"
+
+
+def set_site_config_bool(content: str, key: str, value: bool) -> str:
+    bool_text = "true" if value else "false"
+    pattern = rf'({key}:\s*)(true|false)'
+    if re.search(pattern, content):
+        return re.sub(pattern, lambda match: f"{match.group(1)}{bool_text}", content, count=1)
+    if key == "enableMusicPlayer":
+        return re.sub(
+            r'(blogUrl:\s*"[^"]*",)',
+            lambda match: f"{match.group(1)}\n  enableMusicPlayer: {bool_text},",
+            content,
+            count=1,
+        )
+    return content
+
+
 @router.get("/overview")
 async def overview():
     posts_dir = SITE_ROOT / "posts"
     assets_dir = SITE_ROOT / "public" / "assets" / "images"
     projects_file = SITE_ROOT / "data" / "projects.ts"
+    config_file = SITE_ROOT / "siteConfig.ts"
+    config_text = config_file.read_text(encoding="utf-8") if config_file.exists() else ""
 
     return {
         "success": True,
@@ -189,9 +254,10 @@ async def overview():
         "repoRoot": str(REPO_ROOT),
         "site": {
             "name": "CPZD",
-            "title": "CPZD の Space",
+            "title": read_site_config_value(config_text, "title", "CPZD の Space"),
+            "bio": read_site_config_value(config_text, "bio", "记录开发、学习、生活与分享。"),
             "url": "https://cpzd.top",
-            "blogUrl": "https://blog.cpzd.top",
+            "blogUrl": read_site_config_value(config_text, "blogUrl", "https://blog.cpzd.top"),
             "repo": TARGET_REMOTE,
         },
         "counts": {
@@ -200,7 +266,7 @@ async def overview():
             "projectsFile": projects_file.exists(),
         },
         "plugins": {
-            "musicPlayer": False,
+            "musicPlayer": read_site_config_bool(config_text, "enableMusicPlayer", False),
             "cyberCat": False,
             "chatter": True,
             "gallery": True,
@@ -381,7 +447,7 @@ async def save_friend(payload: FriendPayload):
     friend = {
         "id": friend_id,
         "name": payload.name,
-        "url": payload.url or "",
+        "url": normalize_external_url(payload.url),
         "description": payload.description or "",
         "avatar": payload.avatar or "",
         "themeColor": payload.themeColor or "#6366f1",
@@ -453,9 +519,22 @@ async def list_assets():
                 assets.append({
                     "name": path.name,
                     "path": f"/assets/images/{path.name}",
+                    "previewUrl": f"/api/cpzd/assets/file/{path.name}",
                     "size": path.stat().st_size,
                 })
     return {"success": True, "assets": assets}
+
+
+@router.get("/assets/file/{filename}")
+async def get_asset_file(filename: str):
+    from fastapi.responses import FileResponse
+
+    safe_name = Path(filename).name
+    assets_dir = ensure_inside_site(SITE_ROOT / "public" / "assets" / "images")
+    path = ensure_inside_site(assets_dir / safe_name)
+    if not path.exists() or not path.is_file():
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return FileResponse(path)
 
 
 @router.post("/config")
@@ -464,25 +543,31 @@ async def save_basic_config(payload: ConfigPayload):
     if not config_path.exists():
         raise HTTPException(status_code=404, detail="siteConfig.ts not found")
     content = config_path.read_text(encoding="utf-8")
-    replacements = {
-        "title": payload.title,
-        "bio": payload.bio,
-    }
-    for key, value in replacements.items():
-        content = re.sub(
-            rf'({key}:\s*")[^"]*(")',
-            lambda match, v=value: f"{match.group(1)}{v}{match.group(2)}",
-            content,
-            count=1,
-        )
-    content = re.sub(
-        r'(url:\s*")[^"]*(")',
-        lambda match: f"{match.group(1)}{payload.blogUrl}{match.group(2)}",
-        content,
-        count=1,
-    )
+    content = set_site_config_value(content, "title", payload.title)
+    content = set_site_config_value(content, "bio", payload.bio)
+    content = set_site_config_value(content, "blogUrl", payload.blogUrl)
     config_path.write_text(content, encoding="utf-8")
     return {"success": True, "message": "基础配置已保存"}
+
+
+@router.post("/plugins")
+async def save_plugins(payload: PluginsPayload):
+    config_path = ensure_inside_site(SITE_ROOT / "siteConfig.ts")
+    if not config_path.exists():
+        raise HTTPException(status_code=404, detail="siteConfig.ts not found")
+
+    content = config_path.read_text(encoding="utf-8")
+    if "musicPlayer" in payload.plugins:
+        content = set_site_config_bool(content, "enableMusicPlayer", bool(payload.plugins["musicPlayer"]))
+    config_path.write_text(content, encoding="utf-8")
+
+    return {
+        "success": True,
+        "message": "插件开关已保存。音乐播放器默认保持关闭。" if not payload.plugins.get("musicPlayer", False) else "插件开关已保存。音乐播放器已开启。",
+        "plugins": {
+            "musicPlayer": read_site_config_bool(content, "enableMusicPlayer", False),
+        },
+    }
 
 
 @router.get("/deploy/status")

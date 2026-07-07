@@ -23,6 +23,14 @@ const itemVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
+function normalizeFriendUrl(url: string) {
+  const value = url.trim();
+  if (!value) return '#';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return value;
+  if (value.startsWith('//')) return `https:${value}`;
+  return `https://${value.replace(/^\/+/, '')}`;
+}
+
 export default function FriendsBoard() {
   const { addOperation } = useOperations();
   const { showToast } = useToast();
@@ -171,7 +179,7 @@ export default function FriendsBoard() {
                <button onClick={() => setDeleteModal({ isOpen: true, id: friend.id, name: friend.name })} className="w-8 h-8 rounded-lg bg-red-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Trash2 size={14}/></button>
             </div>
 
-            <a href={friend.url} target="_blank" rel="noopener noreferrer" className="block h-full rounded-3xl bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] p-6 relative">
+            <a href={normalizeFriendUrl(friend.url)} target="_blank" rel="noopener noreferrer" className="block h-full rounded-3xl bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] p-6 relative">
               <div className="absolute -bottom-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" style={{ backgroundColor: friend.themeColor }}></div>
 
               <div className="flex items-center gap-5 relative z-10 mb-4">

@@ -84,8 +84,19 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     const fetchMusicData = async () => {
       try {
-        const res = await fetch(`/api/music?ids=${siteConfig.cloudMusicIds.join(',')}`);
+        const params = new URLSearchParams();
+        if (siteConfig.cloudMusicPlaylistId) {
+          params.set('playlistId', String(siteConfig.cloudMusicPlaylistId));
+        }
+        if (siteConfig.cloudMusicIds?.length > 0) {
+          params.set('ids', siteConfig.cloudMusicIds.join(','));
+        }
+
+        const res = await fetch(`/api/music?${params.toString()}`);
         const rawResults = await res.json();
+        if (!Array.isArray(rawResults)) {
+          throw new Error(rawResults?.error || 'music_api_failed');
+        }
 
         const mergedPlaylist = rawResults
           .filter((song: any) => song && song.url && !song.error)
@@ -109,7 +120,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    if (siteConfig.cloudMusicIds?.length > 0) fetchMusicData();
+    if (!siteConfig.enableMusicPlayer) {
+      setPlaylist([]);
+      setCurrentLyric("音乐播放器已关闭");
+      setIsLoading(false);
+    } else if (siteConfig.cloudMusicPlaylistId || siteConfig.cloudMusicIds?.length > 0) fetchMusicData();
     else setIsLoading(false);
 
     return () => { isMounted = false; };

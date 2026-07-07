@@ -87,6 +87,7 @@ export default function Home() {
   const chatterCount = allChatters.length;
   const realPhotoCount = albums.reduce((total, album) => total + album.photos.length, 0);
   const latestAlbum = albums.length > 0 ? albums[0] : { id: '', title: '照片墙', description: '查看摄影', cover: siteConfig.photoWallImage, date: '' };
+  const musicEnabled = siteConfig.enableMusicPlayer === true;
 
   return (
     <ToastProvider>
@@ -99,18 +100,16 @@ export default function Home() {
             <main className="flex flex-col gap-6 w-full">
               {/* 第一行：个人信息 + 播放器 */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 w-full items-stretch">
-                <div className="md:col-span-7 flex">
+                <div className={`${musicEnabled ? "md:col-span-7" : "md:col-span-12"} flex`}>
                     <ProfileCard postCount={allPosts.length} chatterCount={chatterCount} photoCount={realPhotoCount}/>
                 </div>
 
-                {/* 🌟 核心修改：去掉乱七八糟的 Link 和层级，直接渲染 CloudPlayer */}
-                <div className="md:col-span-5 flex">
+                {musicEnabled && <div className="md:col-span-5 flex">
                     <CloudPlayer/>
-                </div>
+                </div>}
               </div>
 
-              {/* 歌词栏 */}
-              <div className="w-full mt-[-10px]"><LyricBar/></div>
+              {musicEnabled && <div className="w-full mt-[-10px]"><LyricBar/></div>}
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 w-full items-stretch">
                 <div className="md:col-span-4 h-full">

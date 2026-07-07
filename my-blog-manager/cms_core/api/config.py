@@ -119,7 +119,8 @@ def update_site_config(payload: Dict[str, Any] = Body(...)):
     # 🌟 核心防线：绝对安全的根节点白名单！
     VALID_ROOT_KEYS = {
         "title", "authorName", "bio", "avatarUrl", "useGradient", "themeColors",
-        "bgImages", "defaultPostCover", "photoWallImage", "cloudMusicIds", "social",
+        "bgImages", "defaultPostCover", "photoWallImage", "enableMusicPlayer",
+        "cloudMusicPlaylistId", "cloudMusicIds", "social",
         "counts", "chatterTitle", "chatterDescription", "picBedName", "picBedUrl",
         "picBedToken", "danmakuList", "gitalkConfig", "buildDate", "footerBadges",
         "icpConfig", "geminiConfig",

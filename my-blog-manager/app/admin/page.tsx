@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 type Overview = {
   siteRoot: string;
   repoRoot: string;
-  site: { name: string; title: string; url: string; blogUrl: string; repo: string };
+  site: { name: string; title: string; bio: string; url: string; blogUrl: string; repo: string };
   counts: { posts: number; assets: number; projectsFile: boolean };
   plugins: Record<string, boolean>;
 };
@@ -24,6 +24,7 @@ type PostItem = {
 type AssetItem = {
   name: string;
   path: string;
+  previewUrl?: string;
   size: number;
 };
 
@@ -74,6 +75,15 @@ const menuItems = [
   { id: "plugins", name: "插件管理" },
   { id: "deploy", name: "发布部署" },
 ];
+
+const pluginLabels: Record<string, string> = {
+  musicPlayer: "音乐播放器",
+  cyberCat: "小猫组件",
+  chatter: "说说模块",
+  gallery: "相册模块",
+  friends: "友链模块",
+  search: "搜索模块",
+};
 
 const defaultPostForm = {
   slug: "",
@@ -126,6 +136,14 @@ async function getApiBase() {
   if (!response.ok) throw new Error("backend_config.json not found");
   const config = await response.json();
   return `http://127.0.0.1:${config.api_port}/api/cpzd`;
+}
+
+function normalizeExternalUrl(url: string) {
+  const value = url.trim();
+  if (!value) return "";
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return value;
+  if (value.startsWith("//")) return `https:${value}`;
+  return `https://${value.replace(/^\/+/, "")}`;
 }
 
 export default function AdminDashboard() {
@@ -388,7 +406,10 @@ export default function AdminDashboard() {
       const response = await fetch(`${apiBase}/friends`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(friendForm),
+        body: JSON.stringify({
+          ...friendForm,
+          url: normalizeExternalUrl(friendForm.url),
+        }),
       });
       const data = await response.json();
       setMessage(data.message || "友链已保存。");
@@ -479,7 +500,7 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: overview.site.title,
-          bio: "记录开发、学习、生活与分享。",
+          bio: overview.site.bio,
           blogUrl: overview.site.blogUrl,
         }),
       });
@@ -503,6 +524,28 @@ export default function AdminDashboard() {
       setMessage(data.message || "发布流程结束。");
     } catch (error) {
       setMessage("发布失败，请检查 Git 登录状态。");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const savePlugin = async (name: string, enabled: boolean) => {
+    if (!apiBase || !overview) return;
+
+    const nextPlugins = { ...overview.plugins, [name]: enabled };
+    setIsBusy(true);
+    try {
+      const response = await fetch(`${apiBase}/plugins`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plugins: nextPlugins }),
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message || "插件保存失败");
+      setOverview({ ...overview, plugins: { ...nextPlugins, ...(data.plugins || {}) } });
+      setMessage(data.message || "插件开关已保存。");
+    } catch (error) {
+      setMessage("插件开关保存失败，请确认 CPZD Admin 后台服务正常运行。");
     } finally {
       setIsBusy(false);
     }
@@ -585,6 +628,7 @@ export default function AdminDashboard() {
               {activeTab === "config" && overview && (
                 <div className="grid gap-4">
                   <Field label="网站标题" value={overview.site.title} onChange={(value) => setOverview({ ...overview, site: { ...overview.site, title: value } })} />
+                  <Field label="网站简介" value={overview.site.bio} onChange={(value) => setOverview({ ...overview, site: { ...overview.site, bio: value } })} />
                   <Field label="博客地址" value={overview.site.blogUrl} onChange={(value) => setOverview({ ...overview, site: { ...overview.site, blogUrl: value } })} />
                   <button onClick={saveConfig} className="w-fit rounded-xl bg-indigo-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-indigo-500/30">
                     保存基础配置
@@ -867,7 +911,8 @@ export default function AdminDashboard() {
                     <div className="space-y-3">
                       <Field label="友链 ID，可留空自动生成" value={friendForm.id} onChange={(value) => setFriendForm({ ...friendForm, id: value })} />
                       <Field label="名称" value={friendForm.name} onChange={(value) => setFriendForm({ ...friendForm, name: value })} />
-                      <Field label="链接" value={friendForm.url} onChange={(value) => setFriendForm({ ...friendForm, url: value })} />
+                      <Field label="链接（可直接填 blog.initsnow.top）" value={friendForm.url} onChange={(value) => setFriendForm({ ...friendForm, url: value })} />
+                      <Field label="头像路径" value={friendForm.avatar} onChange={(value) => setFriendForm({ ...friendForm, avatar: value })} />
                       <Field label="主题色" value={friendForm.themeColor} onChange={(value) => setFriendForm({ ...friendForm, themeColor: value })} />
                       <label className="block">
                         <span className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-500">简介</span>
@@ -890,7 +935,7 @@ export default function AdminDashboard() {
                   {assets.map((asset) => (
                     <div key={asset.path} className="overflow-hidden rounded-2xl border border-white/40 bg-white/45 shadow-sm dark:border-white/10 dark:bg-slate-800/50">
                       <div className="aspect-video bg-slate-200 dark:bg-slate-950">
-                        <img src={asset.path} alt={asset.name} className="h-full w-full object-cover" />
+                        <img src={asset.previewUrl || asset.path} alt={asset.name} className="h-full w-full object-cover" />
                       </div>
                       <div className="p-4">
                         <div className="truncate text-sm font-black">{asset.name}</div>
@@ -909,7 +954,25 @@ export default function AdminDashboard() {
               {activeTab === "plugins" && overview && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {Object.entries(overview.plugins).map(([name, enabled]) => (
-                    <InfoCard key={name} label={name} value={enabled ? "开启" : "关闭"} />
+                    <div key={name} className="rounded-2xl border border-white/40 bg-white/45 p-5 shadow-sm dark:border-white/10 dark:bg-slate-800/50">
+                      <div className="text-xs font-black tracking-[0.18em] text-slate-500">{pluginLabels[name] || name}</div>
+                      <div className="mt-4 flex items-center justify-between gap-4">
+                        <div className="text-lg font-black text-slate-900 dark:text-white">{enabled ? "开启" : "关闭"}</div>
+                        {name === "musicPlayer" ? (
+                          <button
+                            onClick={() => savePlugin(name, !enabled)}
+                            disabled={isBusy}
+                            className={`flex min-w-28 items-center justify-between rounded-xl px-3 py-2 text-xs font-black text-white shadow-lg transition disabled:opacity-60 ${enabled ? "bg-indigo-500 shadow-indigo-500/25" : "bg-slate-500 shadow-slate-500/20"}`}
+                            aria-label="切换音乐播放器"
+                          >
+                            <span>{enabled ? "点击关闭" : "点击开启"}</span>
+                            <span className={`ml-2 h-4 w-4 rounded-full border-2 border-white ${enabled ? "bg-white" : "bg-transparent"}`} />
+                          </button>
+                        ) : (
+                          <span className="rounded-lg bg-slate-500/10 px-3 py-2 text-xs font-black text-slate-500">暂不可切换</span>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

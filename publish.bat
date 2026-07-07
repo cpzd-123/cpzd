@@ -1,100 +1,115 @@
 @echo off
+chcp 65001 >nul
 setlocal EnableExtensions EnableDelayedExpansion
+title CPZD 一键上传发布
 
 set "ROOT=%~dp0"
 set "TARGET_REMOTE=https://github.com/cpzd-123/cpzd.git"
-
 cd /d "%ROOT%"
 
-call :say PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CiAgICAgICAgQ1BaRCDkuIDplK7kuIrkvKDlj5HluIMKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+echo ====================================
+echo        CPZD 一键上传发布
+echo ====================================
 echo.
 
 git --version >nul 2>&1
 if errorlevel 1 (
-  call :say 5pyq5qOA5rWL5YiwIEdpdO+8jOivt+WFiOWuieijhSBHaXTjgII=
+  echo 未检测到 Git，请先安装 Git。
   pause
   exit /b 1
 )
 
 if not exist ".git" (
-  call :say 5b2T5YmN55uu5b2V5LiN5pivIEdpdCDku5PlupPvvIzmraPlnKjliJ3lp4vljJYuLi4=
-  git init
-  if errorlevel 1 goto fail
+  echo 当前目录不是 Git 仓库。
+  echo 请把 publish.bat 放在 CPZD 项目根目录后再运行。
+  pause
+  exit /b 1
 )
 
+echo 检查远程仓库...
 git remote get-url origin >nul 2>&1
 if errorlevel 1 (
-  call :say 5pyq5om+5YiwIG9yaWdpbu+8jOato+WcqOa3u+WKoO+8mg==
+  echo 未找到 origin，正在设置为 CPZD 主站仓库：
   echo %TARGET_REMOTE%
   git remote add origin %TARGET_REMOTE%
 ) else (
   for /f "delims=" %%r in ('git remote get-url origin') do set "CURRENT_REMOTE=%%r"
   if /i not "!CURRENT_REMOTE!"=="%TARGET_REMOTE%" (
-    call :say b3JpZ2luIOS4jeaYryBDUFpEIOS7k+W6k++8jOato+WcqOiuvue9ruS4uu+8mg==
+    echo origin 不是 CPZD 主站仓库，正在改为：
     echo %TARGET_REMOTE%
     git remote set-url origin %TARGET_REMOTE%
   )
 )
 if errorlevel 1 goto fail
 
+echo.
+echo 当前远程仓库：
+git remote -v
+
 for /f "delims=" %%b in ('git branch --show-current') do set "CURRENT_BRANCH=%%b"
 if /i not "!CURRENT_BRANCH!"=="main" (
   echo.
-  echo Current branch: !CURRENT_BRANCH!
-  call :say 6K+35YiH5o2i5YiwIG1haW4g5YiG5pSv5ZCO5YaN5Y+R5biD44CC
-  call :say 5pys6ISa5pys5LiN5Lya6Ieq5Yqo5YiH5o2i5YiG5pSv77yM6YG/5YWN6KaG55uW5L2g55qE5pys5Zyw5YaF5a6544CC
+  echo 当前分支是：!CURRENT_BRANCH!
+  echo 请先切换到 main 分支后再发布。
+  echo 本脚本不会自动切换分支，避免覆盖你的本地内容。
   pause
   exit /b 1
 )
 
+echo.
+echo 检查是否有改动...
 git status --short > "%TEMP%\cpzd_git_status.txt"
 for %%A in ("%TEMP%\cpzd_git_status.txt") do set "STATUS_SIZE=%%~zA"
 if "%STATUS_SIZE%"=="0" (
-  call :say 5rKh5pyJ6ZyA6KaB5Y+R5biD55qE5pS55Yqo44CC
+  echo 没有需要发布的改动。
   del "%TEMP%\cpzd_git_status.txt" >nul 2>&1
   pause
   exit /b 0
 )
+
+type "%TEMP%\cpzd_git_status.txt"
 del "%TEMP%\cpzd_git_status.txt" >nul 2>&1
 
-call :say 5qOA5rWL5Yiw5pS55Yqo77yM5YeG5aSH5o+Q5Lqk5bm25o6o6YCB44CC
-git status --short
 echo.
-
+echo 正在添加改动...
 git add .
 if errorlevel 1 goto fail
 
-for /f "tokens=1-3 delims=/ " %%a in ("%date%") do set "TODAY=%%a-%%b-%%c"
-for /f "tokens=1-2 delims=:." %%a in ("%time%") do set "NOW=%%a:%%b"
-set "NOW=%NOW: =0%"
-set "COMMIT_MSG=Update CPZD site %TODAY% %NOW%"
+for /f "delims=" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd HH:mm'"') do set "STAMP=%%i"
+set "COMMIT_MSG=Update CPZD site %STAMP%"
 
+echo.
+echo 提交信息：%COMMIT_MSG%
 git commit -m "%COMMIT_MSG%"
-if errorlevel 1 goto fail
-
-git push origin main
 if errorlevel 1 (
-  echo.
-  call :say 5LiK5Lyg5aSx6LSl44CC5Y+v6IO95piv6L+c56iL5pyJ5paw5o+Q5Lqk44CB572R57uc5oiW55m75b2V54q25oCB6Zeu6aKY44CC
-  call :say 5pys6ISa5pys5LiN5Lya6Ieq5YqoIGdpdCBwdWxs77yM5Lmf5LiN5Lya6Ieq5YqoIGZvcmNlIHB1c2jjgII=
-  call :say 5aaC56Gu5a6e6ZyA6KaB5by65Yi26KaG55uW77yM6K+36YCa6L+HIHVwZGF0ZS5iYXQg56ysIDcg6aG55omL5Yqo5LqM5qyh56Gu6K6k44CC
+  echo 提交失败，可能是没有有效改动，或 Git 用户信息未配置。
   pause
   exit /b 1
 )
 
 echo.
-call :say 5LiK5Lyg5oiQ5Yqf44CC
-call :say VmVyY2VsIOWwhuiHquWKqOmDqOe9suOAgg==
-call :say 6K+356iN5ZCO6K6/6ZeuIGh0dHBzOi8vY3B6ZC50b3A=
+echo 正在推送到 GitHub main 分支...
+git push origin main
+if errorlevel 1 (
+  echo.
+  echo 推送失败。
+  echo 请检查 GitHub 登录状态、网络、远程仓库，或是否需要手动处理冲突。
+  echo 本脚本不会自动 git pull，也不会自动 force push。
+  pause
+  exit /b 1
+)
+
+echo.
+echo ====================================
+echo 上传成功。
+echo Vercel 将自动部署。
+echo 稍后访问：https://cpzd.top
+echo ====================================
 pause
 exit /b 0
 
 :fail
 echo.
-call :say 5pON5L2c5aSx6LSl77yM6K+35p+l55yL5LiK5pa56ZSZ6K+v5L+h5oGv44CC
+echo 操作失败，请查看上方错误信息。
 pause
 exit /b 1
-
-:say
-powershell -NoProfile -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; Write-Host ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('%~1')))"
-exit /b 0

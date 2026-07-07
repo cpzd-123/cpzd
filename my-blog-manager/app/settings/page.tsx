@@ -30,6 +30,8 @@ function SettingsContent() {
     bio: siteConfig.bio || "",
     avatarUrl: siteConfig.avatarUrl || "",
     social: siteConfig.social || {},
+    enableMusicPlayer: siteConfig.enableMusicPlayer ?? true,
+    cloudMusicPlaylistId: siteConfig.cloudMusicPlaylistId || "",
     cloudMusicIds: [...(siteConfig.cloudMusicIds || [])],
     bgImages: [...(siteConfig.bgImages || [])],
     gitalkConfig: siteConfig.gitalkConfig || {

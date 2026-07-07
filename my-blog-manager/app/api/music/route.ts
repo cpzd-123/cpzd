@@ -18,13 +18,46 @@ type SongResult = {
   error?: string
 }
 
+type PlaylistTrack = {
+  id?: string | number
+}
+
+const MAX_PLAYLIST_SONGS = 100
+
+async function getPlaylistSongIds(playlistId: string) {
+  const res = await fetch(
+    `https://music.163.com/api/playlist/detail?id=${playlistId}`,
+    { headers: NET_EASE_HEADERS, signal: AbortSignal.timeout(8000) },
+  )
+  const data = await res.json()
+  const tracks = data.result?.tracks || data.playlist?.tracks || []
+  return tracks.map((track: PlaylistTrack) => String(track.id || '')).filter(Boolean)
+}
+
 export async function GET(request: NextRequest) {
   const ids = request.nextUrl.searchParams.get('ids')
-  if (!ids) {
-    return NextResponse.json({ error: 'Missing ids parameter' }, { status: 400 })
+  const playlistId = request.nextUrl.searchParams.get('playlistId')
+
+  if (!ids && !playlistId) {
+    return NextResponse.json({ error: 'Missing ids or playlistId parameter' }, { status: 400 })
   }
 
-  const songIds = ids.split(',').map((id) => id.trim()).filter(Boolean)
+  let playlistSongIds: string[] = []
+  if (playlistId) {
+    try {
+      playlistSongIds = await getPlaylistSongIds(playlistId)
+    } catch (error) {
+      console.error(`[api/music] 获取歌单 ${playlistId} 失败:`, error)
+      return NextResponse.json({ error: 'playlist_fetch_failed' }, { status: 502 })
+    }
+  }
+
+  const songIds = [
+    ...playlistSongIds,
+    ...(ids ? ids.split(',').map((id) => id.trim()).filter(Boolean) : []),
+  ]
+    .filter((id, index, array) => array.indexOf(id) === index)
+    .slice(0, MAX_PLAYLIST_SONGS)
 
   const results: SongResult[] = await Promise.all(
     songIds.map(async (songId): Promise<SongResult> => {

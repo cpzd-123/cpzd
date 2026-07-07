@@ -7,6 +7,7 @@ import Navbar from '../../components/Navbar';
 import PageTransition from '../../components/PageTransition';
 import { useMusic } from '../../components/MusicProvider';
 import Comments from '../../components/Comments';
+import { siteConfig } from '../../siteConfig';
 
 export default function MusicPage() {
   const {
@@ -124,6 +125,15 @@ export default function MusicPage() {
       (song.artist || song.author || '').toLowerCase().includes(lowerQuery)
     );
   }, [playlist, searchQuery]);
+
+  if (!siteConfig.enableMusicPlayer) {
+    return (
+      <div className="min-h-screen relative pb-10 flex flex-col">
+        <Navbar />
+        <div className="flex-1" />
+      </div>
+    );
+  }
 
   if (isLoading || !currentSong) {
     return (

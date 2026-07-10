@@ -30,13 +30,22 @@ export const siteConfig = {
   // 5. 首页照片墙预览图
   photoWallImage: "/assets/images/desktop-light-bg.jpg",
   enableMusicPlayer: true,
-  enableCyberCat: true,
+  enableCyberCat: false,
   enableChatter: true,
   enableGallery: true,
   enableFriends: true,
   enableSearch: true,
   cloudMusicPlaylistId: "18100097519",
   cloudMusicIds: [],
+  localMusicTracks: [
+    {
+      id: "sora-no-hako-local",
+      name: "空の箱 (井芹仁菜、河原木桃香)",
+      artist: "トゲナシトゲアリ",
+      url: "/music/sora-no-hako.mp3",
+      cover: "https://p2.music.126.net/RLet3BtcXtXCGydDLCPe8w==/109951169472319960.jpg",
+    },
+  ],
   social: {
     github: "https://github.com/cpzd-123",
     gitee: "",

@@ -36,6 +36,18 @@ function parseLrc(lrcText: string) {
 // 🌟 1. 扩充 Context 类型，加入 MusicPage 需要的所有属性
 type PlayMode = 'loop' | 'single' | 'random';
 
+function toPlayerSong(song: any) {
+  return {
+    id: song.id || Math.random().toString(),
+    title: song.name || song.title || '未知歌曲',
+    artist: song.artist || song.author || '未知歌手',
+    cover: song.cover || song.pic || 'https://bu.dusays.com/2026/03/24/69c24230a5ff8.jpg',
+    src: song.url || song.src,
+    lrcUrl: song.lrcUrl || null,
+    lyrics: song.lrc ? parseLrc(song.lrc) : (song.lyrics || [])
+  };
+}
+
 interface MusicContextType {
   playlist: any[];
   currentIndex: number;
@@ -55,6 +67,7 @@ interface MusicContextType {
   prevSong: () => void;
   handleSeek: (e: React.ChangeEvent<HTMLInputElement>) => void;
   playSong: (index: number) => void;
+  selectSong: (index: number) => void;
   setVolume: (value: number) => void;
   toggleMute: () => void;
   togglePlayMode: () => void;
@@ -83,6 +96,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     const fetchMusicData = async () => {
+      const localPlaylist = (siteConfig.localMusicTracks || [])
+        .filter((song: any) => song && (song.url || song.src))
+        .map(toPlayerSong);
+
       try {
         const params = new URLSearchParams();
         if (siteConfig.cloudMusicPlaylistId) {
@@ -91,32 +108,44 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         if (siteConfig.cloudMusicIds?.length > 0) {
           params.set('ids', siteConfig.cloudMusicIds.join(','));
         }
+        params.set('_', Date.now().toString());
 
-        const res = await fetch(`/api/music?${params.toString()}`);
-        const rawResults = await res.json();
-        if (!Array.isArray(rawResults)) {
-          throw new Error(rawResults?.error || 'music_api_failed');
+        let rawResults: any[] = [];
+        if (siteConfig.cloudMusicPlaylistId || siteConfig.cloudMusicIds?.length > 0) {
+          const res = await fetch(`/api/music?${params.toString()}`);
+          const data = await res.json();
+          if (!Array.isArray(data)) {
+            throw new Error(data?.error || 'music_api_failed');
+          }
+          rawResults = data;
         }
 
-        const mergedPlaylist = rawResults
+        const cloudPlaylist = rawResults
           .filter((song: any) => song && song.url && !song.error)
-          .map((song: any) => ({
-            id: song.id || Math.random().toString(),
-            title: song.name || '未知歌曲',
-            artist: song.artist || song.author || '未知歌手',
-            cover: song.cover || song.pic || 'https://bu.dusays.com/2026/03/24/69c24230a5ff8.jpg',
-            src: song.url,
-            lrcUrl: null,
-            lyrics: song.lrc ? parseLrc(song.lrc) : []
-          }));
+          .map(toPlayerSong);
+
+        const mergedPlaylist = [...localPlaylist, ...cloudPlaylist];
 
         if (isMounted) {
-          if (mergedPlaylist.length > 0) setPlaylist(mergedPlaylist);
-          else setCurrentLyric("云端链路受阻");
+          if (mergedPlaylist.length > 0) {
+            setPlaylist(mergedPlaylist);
+          } else {
+            setPlaylist([]);
+            setCurrentIndex(0);
+            setCurrentLyric("网易云没有返回可播放音源");
+          }
           setIsLoading(false);
         }
       } catch (error) {
-        if (isMounted) { setCurrentLyric("网络初始化失败"); setIsLoading(false); }
+        if (isMounted) {
+          if (localPlaylist.length > 0) {
+            setPlaylist(localPlaylist);
+            setCurrentLyric(localPlaylist[0]?.lyrics?.[0]?.text || "♪ 本地音源已就绪 ♪");
+          } else {
+            setCurrentLyric("网络初始化失败");
+          }
+          setIsLoading(false);
+        }
       }
     };
 
@@ -124,7 +153,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       setPlaylist([]);
       setCurrentLyric("音乐播放器已关闭");
       setIsLoading(false);
-    } else if (siteConfig.cloudMusicPlaylistId || siteConfig.cloudMusicIds?.length > 0) fetchMusicData();
+    } else if ((siteConfig.localMusicTracks || []).length > 0 || siteConfig.cloudMusicPlaylistId || siteConfig.cloudMusicIds?.length > 0) fetchMusicData();
     else setIsLoading(false);
 
     return () => { isMounted = false; };
@@ -261,7 +290,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         playlist, currentIndex, currentSong, isPlaying, progress, currentTime, duration, currentLyric, isLoading,
         volume, isMuted, playMode, // 暴露新状态
         togglePlay, nextSong, prevSong, handleSeek,
-        playSong, setVolume, toggleMute, togglePlayMode // 暴露新方法
+        playSong, selectSong: playSong, setVolume, toggleMute, togglePlayMode // 暴露新方法
     }}>
       {children}
       {currentSong && (

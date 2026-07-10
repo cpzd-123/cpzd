@@ -1,5 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const NET_EASE_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
@@ -24,14 +27,37 @@ type PlaylistTrack = {
 
 const MAX_PLAYLIST_SONGS = 100
 
+function getNeteaseHeaders() {
+  const cookie =
+    process.env.NETEASE_COOKIE ||
+    (process.env.MUSIC_U ? `MUSIC_U=${process.env.MUSIC_U}` : '')
+
+  return cookie
+    ? { ...NET_EASE_HEADERS, Cookie: cookie }
+    : NET_EASE_HEADERS
+}
+
 async function getPlaylistSongIds(playlistId: string) {
   const res = await fetch(
     `https://music.163.com/api/playlist/detail?id=${playlistId}`,
-    { headers: NET_EASE_HEADERS, signal: AbortSignal.timeout(8000) },
+    { headers: getNeteaseHeaders(), signal: AbortSignal.timeout(8000), cache: 'no-store' },
   )
   const data = await res.json()
   const tracks = data.result?.tracks || data.playlist?.tracks || []
   return tracks.map((track: PlaylistTrack) => String(track.id || '')).filter(Boolean)
+}
+
+async function getPlayableUrl(songId: string) {
+  const res = await fetch(
+    `https://music.163.com/api/song/enhance/player/url?id=${songId}&ids=[${songId}]&br=320000`,
+    { headers: getNeteaseHeaders(), signal: AbortSignal.timeout(6000), cache: 'no-store' },
+  )
+  const data = await res.json()
+  const url = data.data?.[0]?.url
+
+  return typeof url === 'string' && /^https?:\/\//.test(url)
+    ? url.replace(/^http:/, 'https:')
+    : ''
 }
 
 export async function GET(request: NextRequest) {
@@ -62,15 +88,16 @@ export async function GET(request: NextRequest) {
   const results: SongResult[] = await Promise.all(
     songIds.map(async (songId): Promise<SongResult> => {
       try {
-        const [detailRes, lrcRes] = await Promise.all([
+        const [detailRes, lrcRes, playableUrl] = await Promise.all([
           fetch(
             `https://music.163.com/api/song/detail/?id=${songId}&ids=[${songId}]`,
-            { headers: NET_EASE_HEADERS, signal: AbortSignal.timeout(6000) },
+            { headers: getNeteaseHeaders(), signal: AbortSignal.timeout(6000), cache: 'no-store' },
           ),
           fetch(
             `https://music.163.com/api/song/lyric?id=${songId}&lv=-1&kv=-1&tv=-1`,
-            { headers: NET_EASE_HEADERS, signal: AbortSignal.timeout(6000) },
+            { headers: getNeteaseHeaders(), signal: AbortSignal.timeout(6000), cache: 'no-store' },
           ).catch(() => null),
+          getPlayableUrl(songId).catch(() => ''),
         ])
 
         const detail = await detailRes.json()
@@ -78,6 +105,10 @@ export async function GET(request: NextRequest) {
 
         if (!song) {
           return { id: songId, error: 'not_found' }
+        }
+
+        if (!playableUrl) {
+          return { id: songId, name: song.name, error: 'unplayable' }
         }
 
         let lrcText = ''
@@ -99,7 +130,7 @@ export async function GET(request: NextRequest) {
           author: artistName,
           cover: song.album?.picUrl || '',
           pic: song.album?.picUrl || '',
-          url: `https://music.163.com/song/media/outer/url?id=${songId}.mp3`,
+          url: playableUrl,
           lrc: lrcText,
         }
       } catch (error) {

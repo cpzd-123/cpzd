@@ -25,13 +25,5 @@ export const friendsData: Friend[] = [
     "description": "2720168105",
     "avatar": "",
     "themeColor": "#6366f1"
-  },
-  {
-    "id": "blog",
-    "name": "Blog",
-    "url": "https://blog.cpzd.top",
-    "description": "blog.cpzd.top",
-    "avatar": "",
-    "themeColor": "#6366f1"
   }
 ];

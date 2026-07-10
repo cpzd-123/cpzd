@@ -135,13 +135,26 @@ export default function MusicPage() {
     );
   }
 
-  if (isLoading || !currentSong) {
+  if (isLoading) {
     return (
       <div className="min-h-screen relative pb-32 flex flex-col">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center animate-pulse gap-4">
           <Disc3 size={48} className="text-indigo-500 animate-spin" />
           <span className="font-black text-slate-500 tracking-widest text-sm">唤醒音频引擎中...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentSong) {
+    return (
+      <div className="min-h-screen relative pb-32 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <Disc3 size={48} className="text-indigo-500/70" />
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">歌单暂时无法播放</h1>
+          <p className="max-w-xl text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium">{currentLyric || "网易云没有返回可播放音源"}</p>
         </div>
       </div>
     );

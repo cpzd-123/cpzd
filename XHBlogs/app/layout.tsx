@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "../components/ThemeProvider";
 import BackgroundEffects from "../components/BackgroundEffects";
+import { MusicProvider } from "../components/MusicProvider";
+import FloatingPlayer from "../components/FloatingPlayer";
 import { siteConfig } from "../siteConfig";
 import ClickEffect from "../components/ClickEffect";
 import BackgroundSlider from "../components/BackgroundSlider";
@@ -50,10 +52,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
       <body className="w-screen overflow-x-hidden min-h-full flex flex-col relative transition-colors duration-1000 bg-slate-50 dark:bg-slate-950 font-serif">
         <ThemeProvider>
+          <MusicProvider>
+            <SplashScreen />
 
-          <SplashScreen />
-
-          <div id="app-mount-root" className="flex-1 flex flex-col transition-opacity duration-1000">
+            <div id="app-mount-root" className="flex-1 flex flex-col transition-opacity duration-1000">
               <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden">
                 {!siteConfig.useGradient && <BackgroundSlider />}
                 <div className="desktop-background-softener absolute inset-0 z-[-9] bg-white/20 md:bg-white/[0.14] dark:bg-slate-900/35 md:dark:bg-slate-900/25 transition-colors duration-1000"></div>
@@ -86,6 +88,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 {children}
               </div>
 
+              {siteConfig.enableMusicPlayer && <FloatingPlayer />}
+
               <div className="hidden md:block">
                 <GlobalToolbox />
               </div>
@@ -100,13 +104,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </div>
             </div>
 
-          <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: `
-            @keyframes gradientMove { 
-              0% { background-position: 0% 50%; } 
-              50% { background-position: 100% 50%; } 
-              100% { background-position: 0% 50%; } 
-            }
-          `}} />
+            <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: `
+              @keyframes gradientMove {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+              }
+            `}} />
+          </MusicProvider>
         </ThemeProvider>
       </body>
     </html>
